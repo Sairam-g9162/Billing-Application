@@ -31,11 +31,21 @@
       text-decoration: none;
       border-radius: 4px;
     }
+    .back-button::before {
+      content: '←';
+      margin-right: 5px;
+      font-size: 16px;
+    }
     
     h1 {
-      color: #333;
+      background: linear-gradient(to right, #DA4453, #89216B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 35px;
+      font-weight: bold;
       margin-top: 0;
     }
+
     
     .search-form {
       margin-bottom: 20px;
@@ -49,6 +59,7 @@
       width: 200px;
       border: 1px solid #ddd;
       border-radius: 4px;
+      margin-bottom: 25px;
     }
     
     .search-form button {
@@ -156,7 +167,7 @@
 <body>
   <div class="container">
     <a href="/" class="back-button">Home</a>
-    <h1>Calculate Interest</h1>
+    <h1><gradient-wrapper>Calculate Interest</gradient-wrapper></h1>
     
     <!-- Search Form -->
     <div class="search-form">

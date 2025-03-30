@@ -23,7 +23,7 @@
       <!-- Rest of the form fields -->
       <div>
         <label for="billNumber"><gradient-wrapper>Bill Number*</gradient-wrapper></label>
-        <input type="text" id="billNumber" name="billNumber" required>
+        <input type="text" id="billNumber" name="billNumber" value="<%= nextBillNumber %>" readonly>
       </div>
       <div>
         <label for="name"><gradient-wrapper>Name*</gradient-wrapper></label>
@@ -31,7 +31,7 @@
       </div>
       <div>
         <label for="date"><gradient-wrapper>Date*</gradient-wrapper></label>
-        <input type="date" id="date" name="date" required>
+        <input type="date" id="date" name="date" required min="<%= new Date().getFullYear() %>-01-01" max="<%= new Date().toISOString().split('T')[0] %>">
       </div>
       <div>
         <label for="phoneNumber"><gradient-wrapper>Phone Number*</gradient-wrapper></label>
@@ -104,6 +104,13 @@
         const form = document.getElementById('billForm');
         form.reset();
         
+        // Set the bill number from server
+        document.getElementById('billNumber').value = '<%= nextBillNumber %>';
+        
+        // Set default date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+        
         // Clear item fields
         document.getElementById('itemFields').innerHTML = '';
     });
@@ -137,19 +144,47 @@
     }
 
     function validatePhoneNumber(input) {
+      // Ensure it's a valid 10-digit phone number
       if (input.value.length > 10) {
         input.value = input.value.slice(0, 10);
       }
+      
+      // Only allow digits
+      input.value = input.value.replace(/[^0-9]/g, '');
     }
 
     function validateAadharNumber(input) {
+      // Ensure it's a valid 12-digit Aadhar number
       if (input.value.length > 12) {
         input.value = input.value.slice(0, 12);
+      }
+      
+      // Only allow digits
+      input.value = input.value.replace(/[^0-9]/g, '');
+    }
+
+    function validateDate(input) {
+      const selectedDate = new Date(input.value);
+      const today = new Date();
+      const startOfYear = new Date(today.getFullYear(), 0, 1);
+      
+      // Check if date is in current year and not future date
+      if (selectedDate < startOfYear || selectedDate > today) {
+        alert('Please select a date within the current year and not in the future.');
+        input.value = today.toISOString().split('T')[0];
       }
     }
 
     function showConfirmation(event) {
       event.preventDefault();
+      
+      // Validate all required fields
+      const form = document.getElementById('billForm');
+      if (!form.checkValidity()) {
+        // Trigger browser's built-in validation
+        form.reportValidity();
+        return;
+      }
       
       // Build the items JSON
       const itemsObj = buildItemsJson();
@@ -160,7 +195,6 @@
       // Set the hidden field value
       document.getElementById('items').value = JSON.stringify(itemsObj);
 
-      const form = document.getElementById('billForm');
       document.getElementById('confirmBillNumber').textContent = form.billNumber.value;
       document.getElementById('confirmName').textContent = form.name.value;
       document.getElementById('confirmPhone').textContent = form.phoneNumber.value;
@@ -186,7 +220,7 @@
         const nameInput = document.getElementById(`itemName${i}`);
         const weightInput = document.getElementById(`itemWeight${i}`);
         
-        if (!nameInput.value || !weightInput.value) {
+        if (!nameInput || !nameInput.value || !weightInput || !weightInput.value) {
           alert('Please fill in all item details');
           return null;
         }
@@ -248,9 +282,54 @@
           }, 300);
       }, 3000);
     }
+
+    // Add event listener for date validation
+    document.getElementById('date').addEventListener('change', function() {
+      validateDate(this);
+    });
   </script>
   <style>
     /* Existing styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 60%;
+      border-radius: 5px;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    
+    .modal-buttons button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .modal-buttons button:last-child {
+      background-color: #f44336;
+    }
+    
     #toaster {
         position: fixed;
         top: 0;
@@ -335,7 +414,7 @@
         font-size: 16px;
     }
     
-    /* New styles for item grid */
+    /* Styles for item grid */
     .item-grid {
         display: flex;
         flex-direction: column;

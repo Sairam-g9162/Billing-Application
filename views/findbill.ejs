@@ -38,7 +38,7 @@
     <div class="results">
       <% if (results.length > 0) { %>
         <% results.forEach(bill => { %>
-          <div class="bill-card">
+          <div class="bill-card" <% if (bill["Status"] === 'Released') { %> style="background-color: #ffebee;" <% } %>>
             <!-- Bill Details (Left Side) -->
             <div class="bill-card-content">
               <h3>Bill Number: <%= bill["Bill Number"] %></h3>
@@ -53,20 +53,7 @@
               <p><strong>Interest Rate:</strong> <%= bill["Interest Rate"] %>%</p>
               <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
               
-              <!-- Calculate and display Amount to be Paid with dynamic current date -->
-              <% 
-                const billDate = new Date(bill["Date"]);
-                const currentDate = new Date(); // Dynamically fetches today's date
-                const timeDiffMs = currentDate - billDate; // Difference in milliseconds
-                const timeDiffDays = timeDiffMs / (1000 * 60 * 60 * 24); // Convert to days
-                const timeDiffYears = timeDiffDays / 365; // Convert to years
-                
-                const principal = parseFloat(bill["Initial Pledged Amount"]);
-                const interestRate = parseFloat(bill["Interest Rate"]); // Annual interest rate in %
-                const interest = (principal * interestRate * timeDiffYears) / 100; // Simple interest
-                const totalAmount = principal + interest; // Total amount to be paid
-              %>
-              <h3><gradient-wrapper>Amount to be Paid:</gradient-wrapper> <span style="color: rgb(183, 8, 8);"><%= totalAmount.toFixed(0) %></span></h3>
+             
 
               <% if (bill["Status"] === 'Released') { %>
                 <p><strong>Released Date:</strong> <%= bill["Released Date"] %></p>
@@ -76,10 +63,16 @@
 
             <!-- Action Buttons (Right Side, Stacked Vertically) -->
             <div class="action-buttons">
-              <button onclick="window.location.href='/principal-addition?billNumber=<%= bill['Bill Number'] %>'">Principal Addition</button>
-              <button onclick="window.location.href='/repayment?billNumber=<%= bill['Bill Number'] %>'">Repayment</button>
+              <button onclick="window.location.href='/principal-addition?billNumber=<%= bill['Bill Number'] %>'"
+                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Principal Addition</button>
+              <button onclick="window.location.href='/repayment?billNumber=<%= bill['Bill Number'] %>'"
+                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Repayment</button>
               <button onclick="window.location.href='/release?billNumber=<%= bill['Bill Number'] %>'" 
                       <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Release</button>
+              <button onclick="window.location.href='/print-bill?billNumber=<%= bill['Bill Number'] %>'"
+                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Print Bill</button>
+              <button onclick="window.location.href='/calculate-interest?billNumber=<%= bill['Bill Number'] %>'"
+                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Calculate Interest</button>
             </div>
           </div>
         <% }); %>

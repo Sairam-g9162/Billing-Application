@@ -170,8 +170,8 @@
 </head>
 <body>
   <div class="container">
-    <a href="/" class="back-button">Home</a>
     <h1>Release Bill</h1>
+    <a href="/" class="back-button">Home</a>
 
     <!-- Search Form -->
     <form action="/release" method="GET">
@@ -218,6 +218,10 @@
           <% } else { %>
             <button disabled>Release</button>
           <% } %>
+          <button onclick="window.location.href='/print-bill?billNumber=<%= bill['Bill Number'] %>'"
+            <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Print Bill</button>
+          <button onclick="window.location.href='/calculate-interest?billNumber=<%= bill['Bill Number'] %>'"
+            <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Calculate Interest</button>
         </div>
       </div>
       

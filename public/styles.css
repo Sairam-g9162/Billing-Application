@@ -209,16 +209,16 @@ textarea {
 
 /* Action buttons (right side, stacked vertically) */
 .action-buttons {
-  margin-top: 30px;
+  margin-top: 10px;
   margin-right: 50px;
   display: flex;
   flex-direction: column; /* Stack buttons vertically */
-  gap: 25px; /* Space between buttons */
+  gap: 6px; /* Space between buttons */
   align-items: flex-end; /* Align buttons to the right */
 }
 
 .action-buttons button {
-  background: linear-gradient(to right, #077416, #0e4202 ); /* Greenish Gradient */
+  background: linear-gradient(to right, #046711, #0e4202 ); /* Greenish Gradient */
   padding: 8px 15px;
   font-size: 14px;
   width: 150px; /* Fixed width for buttons to align them neatly */

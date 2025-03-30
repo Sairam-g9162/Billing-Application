@@ -22,22 +22,63 @@ app.get('/', (req, res) => {
 
 // GET: Render the Add Bill form
 app.get('/add-bill', (req, res) => {
-  res.render('addBill', { error: null, success: null });
+  // Query the database for the latest bill number from both tables
+  const query = `
+    SELECT "Bill Number" as billNumber FROM (
+      SELECT "Bill Number" FROM active_pledges
+      UNION
+      SELECT "Bill Number" FROM released_pledges
+    ) ORDER BY billNumber DESC LIMIT 1
+  `;
+  
+  db.get(query, [], (err, result) => {
+    let nextBillNumber = 'A0001'; // Default starting value
+    
+    if (!err && result) {
+      // Extract the letter and number parts
+      const lastBill = result.billNumber || '';
+      if (lastBill.length > 0) {
+        const letter = lastBill.charAt(0);
+        const number = parseInt(lastBill.substring(1));
+        
+        if (!isNaN(number)) {
+          if (number < 9999) {
+            // Increment the number
+            const newNumber = number + 1;
+            nextBillNumber = letter + newNumber.toString().padStart(4, '0');
+          } else {
+            // Move to the next letter
+            const nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
+            if (nextLetter <= 'Z') {
+              nextBillNumber = nextLetter + '0001';
+            }
+          }
+        }
+      }
+    }
+    
+    res.render('addBill', { 
+      error: null, 
+      success: null,
+      nextBillNumber: nextBillNumber 
+    });
+  });
 });
 
 // POST: Handle form submission for Add Bill
 // POST: Handle form submission for Add Bill
+// Modify your app.post('/add-bill') handler:
 app.post('/add-bill', (req, res) => {
   const {
     billNumber, name, date, phoneNumber, address, aadharNumber,
     goldSilver, noOfItems, items, remarks, interestRate, initialPledgedAmount,
     principleAddingHis, repayHistory
   } = req.body;
-
+  
   try {
     // Parse the items JSON object from the form
     const itemsObject = items ? JSON.parse(items) : {};
-
+    
     // Prepare data for insertion
     const data = [
       billNumber, name, date, phoneNumber, address, aadharNumber || null,
@@ -46,7 +87,7 @@ app.post('/add-bill', (req, res) => {
       principleAddingHis || JSON.stringify({}),
       repayHistory || JSON.stringify({})
     ];
-
+    
     // Insert into active_pledges
     db.run(`
       INSERT INTO active_pledges (
@@ -58,14 +99,23 @@ app.post('/add-bill', (req, res) => {
     `, data, (err) => {
       if (err) {
         console.error('Error inserting into active_pledges:', err.message);
-        res.render('addBill', { error: 'Error adding bill: ' + err.message, success: null });
+        res.render('addBill', { 
+          error: 'Error adding bill: ' + err.message, 
+          success: null,
+          nextBillNumber: billNumber 
+        });
       } else {
-        res.render('addBill', { error: null, success: 'Bill added successfully!' });
+        // Redirect to print-bill page with the bill number
+        res.redirect(`/print-bill?billNumber=${billNumber}`);
       }
     });
   } catch (error) {
     console.error('Error processing form data:', error.message);
-    res.render('addBill', { error: 'Error processing form data: ' + error.message, success: null });
+    res.render('addBill', { 
+      error: 'Error processing form data: ' + error.message, 
+      success: null,
+      nextBillNumber: billNumber
+    });
   }
 });
 // GET: Principal Addition page
