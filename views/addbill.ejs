@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Bill</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-button">Home</a>
+    <h1><gradient-wrapper>Add Bill</gradient-wrapper></h1>
+    <!-- Display success or error messages -->
+    <% if (error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+    <% if (success) { %>
+      <p style="color: green;"><%= success %></p>
+    <% } %>
+
+    <!-- Form -->
+    <form action="/add-bill" method="POST" id="billForm">
+      <!-- Rest of the form fields -->
+      <div>
+        <label for="billNumber"><gradient-wrapper>Bill Number*</gradient-wrapper></label>
+        <input type="text" id="billNumber" name="billNumber" required>
+      </div>
+      <div>
+        <label for="name"><gradient-wrapper>Name*</gradient-wrapper></label>
+        <input type="text" id="name" name="name" required>
+      </div>
+      <div>
+        <label for="date"><gradient-wrapper>Date*</gradient-wrapper></label>
+        <input type="date" id="date" name="date" required>
+      </div>
+      <div>
+        <label for="phoneNumber"><gradient-wrapper>Phone Number*</gradient-wrapper></label>
+        <input type="number" id="phoneNumber" name="phoneNumber" required maxlength="10" oninput="validatePhoneNumber(this)">
+      </div>
+      <div>
+        <label for="address"><gradient-wrapper>Address*</gradient-wrapper></label>
+        <textarea id="address" name="address" required></textarea>
+      </div>
+      <div>
+        <label for="aadharNumber"><gradient-wrapper>Aadhar Number</gradient-wrapper></label>
+        <input type="number" id="aadharNumber" name="aadharNumber" maxlength="12" oninput="validateAadharNumber(this)">
+      </div>
+      <div>
+        <label for="goldSilver"><gradient-wrapper>Gold/Silver*</gradient-wrapper></label>
+        <select id="goldSilver" name="goldSilver" required>
+          <option value="Gold">Gold</option>
+          <option value="Silver">Silver</option>
+        </select>
+      </div>
+      <div>
+        <label for="noOfItems"><gradient-wrapper>Number of Items*</gradient-wrapper></label>
+        <input type="number" id="noOfItems" name="noOfItems" min="1" required>
+        <button type="button" onclick="generateItemFields()">Generate Item Fields</button>
+      </div>
+      <div id="itemFields" class="item-grid"></div>
+      <div>
+        <label for="remarks"><gradient-wrapper>Remarks</gradient-wrapper></label>
+        <textarea id="remarks" name="remarks"></textarea>
+      </div>
+      <div>
+        <label for="interestRate"><gradient-wrapper>Interest Rate (%)*</gradient-wrapper></label>
+        <input type="number" id="interestRate" name="interestRate" step="0.1" required>
+      </div>
+      <div>
+        <label for="initialPledgedAmount"><gradient-wrapper>Initial Pledged Amount*</gradient-wrapper></label>
+        <input type="number" id="initialPledgedAmount" name="initialPledgedAmount" required>
+      </div>
+      <!-- Hidden fields for JSON data -->
+      <input type="hidden" id="items" name="items" value="{}">
+      <input type="hidden" id="principleAddingHis" name="principleAddingHis" value="{}">
+      <input type="hidden" id="repayHistory" name="repayHistory" value="{}">
+      
+      <button type="button" onclick="showConfirmation(event)">Preview Bill</button>
+      <button type="submit" style="display:none;" id="submitButton">Add Bill</button>
+    </form>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-left">
+        <h3><gradient-wrapper>Confirm Bill Details</gradient-wrapper></h3>
+        <p><strong>Bill Number:</strong> <span id="confirmBillNumber"></span></p>
+        <p><strong>Name:</strong> <span id="confirmName"></span></p>
+        <p><strong>Phone Number:</strong> <span id="confirmPhone"></span></p>
+        <p><strong>Pledged Amount:</strong> <span id="confirmAmount"></span></p>
+        <p><strong>Items:</strong> <span id="confirmItems"></span></p>
+        <p><strong>Remarks:</strong> <span id="confirmRemarks"></span></p>
+      </div>
+      <div class="modal-buttons">
+        <button onclick="confirmAndSubmit()">Confirm & Submit</button>
+        <button onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('load', function() {
+        const form = document.getElementById('billForm');
+        form.reset();
+        
+        // Clear item fields
+        document.getElementById('itemFields').innerHTML = '';
+    });
+
+    function generateItemFields() {
+      const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      const itemFieldsDiv = document.getElementById('itemFields');
+      itemFieldsDiv.innerHTML = '';
+
+      if (isNaN(noOfItems) || noOfItems < 1) {
+        alert('Please enter a valid number of items (minimum 1).');
+        return;
+      }
+
+      // Add styling for the grid layout
+      itemFieldsDiv.className = 'item-grid';
+
+      for (let i = 1; i <= noOfItems; i++) {
+        const itemRow = document.createElement('div');
+        itemRow.className = 'item-row';
+        itemRow.innerHTML = `
+          <div class="item-label">Item ${i}:</div>
+          <div class="item-inputs">
+            <input type="text" id="itemName${i}" name="itemName${i}" placeholder="Item name (e.g., Ring)" required>
+            <input type="text" id="itemWeight${i}" name="itemWeight${i}" placeholder="Weight (e.g., 5)" required>
+            <span>gms</span>
+          </div>
+        `;
+        itemFieldsDiv.appendChild(itemRow);
+      }
+    }
+
+    function validatePhoneNumber(input) {
+      if (input.value.length > 10) {
+        input.value = input.value.slice(0, 10);
+      }
+    }
+
+    function validateAadharNumber(input) {
+      if (input.value.length > 12) {
+        input.value = input.value.slice(0, 12);
+      }
+    }
+
+    function showConfirmation(event) {
+      event.preventDefault();
+      
+      // Build the items JSON
+      const itemsObj = buildItemsJson();
+      if (!itemsObj) {
+        return; // Validation failed
+      }
+      
+      // Set the hidden field value
+      document.getElementById('items').value = JSON.stringify(itemsObj);
+
+      const form = document.getElementById('billForm');
+      document.getElementById('confirmBillNumber').textContent = form.billNumber.value;
+      document.getElementById('confirmName').textContent = form.name.value;
+      document.getElementById('confirmPhone').textContent = form.phoneNumber.value;
+      document.getElementById('confirmAmount').textContent = form.initialPledgedAmount.value;
+      
+      // Format the items for display
+      const itemsForDisplay = Object.entries(itemsObj)
+        .map(([name, weight]) => `${name}: ${weight}`)
+        .join(', ');
+      document.getElementById('confirmItems').textContent = itemsForDisplay;
+      
+      document.getElementById('confirmRemarks').textContent = form.remarks.value || 'None';
+
+      document.getElementById('confirmationModal').style.display = 'block';
+    }
+
+    function buildItemsJson() {
+      const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      const itemsObj = {};
+      
+      // Validate all fields are filled
+      for (let i = 1; i <= noOfItems; i++) {
+        const nameInput = document.getElementById(`itemName${i}`);
+        const weightInput = document.getElementById(`itemWeight${i}`);
+        
+        if (!nameInput.value || !weightInput.value) {
+          alert('Please fill in all item details');
+          return null;
+        }
+        
+        // Add to the JSON object with format {"itemName": "weightgms"}
+        itemsObj[nameInput.value] = `${weightInput.value}gms`;
+      }
+      
+      return itemsObj;
+    }
+
+    function closeModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+    }
+
+    function confirmAndSubmit() {
+      const form = document.getElementById('billForm');
+      closeModal();
+      // Get the bill number from the form
+      const billNumber = form.billNumber.value;
+      
+      // Show the toaster with the bill number
+      showToaster(`Processing bill Number ${billNumber} Please hold on! ⏳`, 'success');      
+      // Delay form submission slightly to allow toaster to be visible
+      setTimeout(() => {
+        form.submit();  // This submits to /add-bill as defined in form's action attribute
+      }, 3000);
+    }
+    
+    function showToaster(message, type = 'success') {
+      let toaster = document.getElementById('toaster');
+      if (!toaster) {
+          toaster = document.createElement('div');
+          toaster.id = 'toaster';
+          document.body.appendChild(toaster);
+      }
+
+      toaster.innerHTML = `
+          <div class="toaster-content">
+              <div class="tick-mark ${type}">
+                  <svg viewBox="0 0 52 52">
+                      <circle class="circle" cx="26" cy="26" r="25"/>
+                      <path class="check" d="M14 27l8 8 16-16"/>
+                  </svg>
+              </div>
+              <span class="message">${message}</span>
+          </div>
+      `;
+
+      toaster.style.display = 'flex';
+      setTimeout(() => {
+          toaster.classList.add('show');
+      }, 10);
+
+      setTimeout(() => {
+          toaster.classList.remove('show');
+          setTimeout(() => {
+              toaster.style.display = 'none';
+          }, 300);
+      }, 3000);
+    }
+  </script>
+  <style>
+    /* Existing styles */
+    #toaster {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .toaster-content {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.3s ease;
+    }
+
+    #toaster.show .toaster-content {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .tick-mark {
+        width: 60px;
+        height: 60px;
+        position: relative;
+    }
+
+    .tick-mark.success .circle {
+        stroke: #00cc00;
+        fill: none;
+    }
+
+    .tick-mark.error .circle {
+        stroke: #ff0000;
+        fill: none;
+    }
+
+    .circle {
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-dasharray: 157; /* 2πr ≈ 157 for r=25 */
+        stroke-dashoffset: 157;
+        animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+
+    .check {
+        fill: none;
+        stroke: #ffffff;
+        stroke-width: 3; /* Increased for better visibility */
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 48; /* Length of checkmark path */
+        stroke-dashoffset: 48;
+        animation: strokeCheck 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+    }
+
+    @keyframes strokeCircle {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    @keyframes strokeCheck {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    .message {
+        color: #333;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+    }
+    
+    /* New styles for item grid */
+    .item-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .item-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .item-label {
+        width: 80px;
+        font-weight: bold;
+    }
+    
+    .item-inputs {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-grow: 1;
+    }
+    
+    .item-inputs input {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+</style>
+</body>
+</html>

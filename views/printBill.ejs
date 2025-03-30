@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Print Bill</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .pawn-ticket {
+      border: 2px solid black;
+      padding: 20px;
+      width: 800px;
+      margin: 0 auto;
+      font-family: Arial, sans-serif;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+    }
+    .title {
+      color: green;
+      font-size: 26px;
+      font-weight: bold;
+      text-align: center;
+      flex-grow: 1;
+    }
+    .contact-info {
+      text-align: right;
+      color: green;
+      font-weight: bold;
+    }
+    .bill-details {
+      margin-bottom: 30px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    .items-table th, .items-table td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+    .items-table th {
+      background-color: #f2f2f2;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+    }
+    .print-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 10px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .search-form {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    @media print {
+      .no-print {
+        display: none;
+      }
+      .container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .pawn-ticket {
+        width: 100%;
+        border: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-button no-print">Home</a>
+    <h1 class="no-print">Print Bill</h1>
+
+    <!-- Search Form -->
+    <div class="search-form no-print">
+      <form method="GET" action="/print-bill">
+        <div>
+          <label for="billNumber">Enter Bill Number:</label>
+          <input type="text" id="billNumber" name="billNumber" value="<%= locals.searchBillNumber || '' %>" required>
+        </div>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <!-- Display error message -->
+    <% if (locals.error) { %>
+      <p style="color: red;" class="no-print"><%= error %></p>
+    <% } %>
+
+    <!-- Display Bill in Pawn Ticket format -->
+    <% if (locals.bill) { %>
+      <div class="pawn-ticket">
+        <!-- Header with Tamil text and contact info -->
+        <div class="header">
+          <img src="images\\lakshmi.png" alt="Logo" class="logo">
+          <div class="title">
+            சாந்தி பான் புரோக்கர்ஸ்<br>
+            Pawn Ticket | அடகு சீட்டு
+          </div>
+          <div class="contact-info">
+            P.B.L.No.<%= bill["Bill Number"] %><br>
+            Phone: <%= bill["Phone Number"] %>
+          </div>
+        </div>
+
+        <!-- Bill Details -->
+        <div class="bill-details">
+          <div><strong>Pledge No:</strong> <%= bill["Bill Number"] %></div>
+          <div><strong>Date:</strong> <%= bill["Date"] %></div>
+          <div><strong>Name:</strong> <%= bill["Name"] %></div>
+          <div><strong>Address:</strong> <%= bill["Address"] %></div>
+          <div><strong>Loan Amount:</strong> ₹<%= bill["Initial Pledged Amount"] %></div>
+        </div>
+
+        <!-- Items Table -->
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Pledge Articles</th>
+              <th>Gross Weight (gms)</th>
+              <th>Value (Rs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% 
+              let items = {};
+              try {
+                if (bill["Items"] && typeof bill["Items"] === 'string') {
+                  items = JSON.parse(bill["Items"]);
+                }
+              } catch(e) {
+                items = {};
+              }
+              
+              // If no items or not a valid JSON, create a fallback
+              if (Object.keys(items).length === 0) {
+                items = {"Item": "N/A"};
+              }
+              
+              // Display each item
+              Object.entries(items).forEach(([item, weight]) => {
+            %>
+              <tr>
+                <td><%= item %></td>
+                <td><%= weight.replace('gms', '') || 'N/A' %></td>
+                <td>N/A</td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <!-- Interest Rate -->
+        <div><strong>Interest:</strong> <%= bill["Interest Rate"] %>% per annum</div>
+
+        <!-- Signature Field -->
+        <div class="footer">
+          <div></div>
+          <div><strong>Signature:</strong> ____________________________</div>
+        </div>
+      </div>
+      
+      <!-- Print Button -->
+      <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button class="print-button" onclick="window.print()">Print Bill</button>
+      </div>
+    <% } %>
+
+    <!-- Back to Home Button -->
+    <button onclick="window.location.href='/'" class="no-print">Back to Home Page</button>
+  </div>
+</body>
+</html>

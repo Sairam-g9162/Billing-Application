@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bill Management App</title>
+  <style>
+    /* Body styles */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: #fff;
+      background-size: 400% 400%;
+      background-image: -moz-radial-gradient();
+      animation: gradientAnimation 15s ease infinite;
+    }
+
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+    margin: 50px auto;
+    max-width: 600px;
+    padding: 20px;
+    background-color: transparent; /* Fully transparent */
+    border-radius: 8px;
+    box-shadow: none; /* Remove box-shadow */
+    position: relative;
+    z-index: 1;
+  }
+
+  h1 {
+  font-family: 'Great Vibes', cursive;
+  font-size: 5vw; /* Responsive font size based on viewport width */
+  margin-top: 20px;
+  margin-bottom: 20px;
+  /* text-shadow: 2px 2px 5px #013511; */
+  width: 100%; /* Make the width match the container */
+  white-space: nowrap; /* Prevent text from wrapping */
+  overflow: hidden; /* Avoid overflow */
+  text-overflow: ellipsis; /* Optional: adds ellipsis if text overflows */
+}
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      background: linear-gradient(to right, #DA4453, #89216B);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(to left, #DA4453, #89216B);
+      transform: scale(1.05);
+    }
+
+    /* Falling "gold coins" */
+    .coin {
+      position: absolute;
+      top: -50px;
+      width: 20px; /* Size of the coin */
+      height: 20px;
+      background: radial-gradient(circle at 30% 30%, #FFD700, #DAA520); /* Gold gradient */
+      border-radius: 50%; /* Circular shape */
+      opacity: 0.9;
+      animation: fall linear forwards;
+      box-shadow: 0 0 5px rgba(255, 215, 0, 0.8), inset 0 0 3px rgba(255, 255, 255, 0.5); /* Glow and shine */
+      border: 1px solid #B8860B; /* Darker gold edge */
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0deg); /* Start with no rotation */
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg); /* Fall and spin */
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Logo image; adjust path as needed -->
+  <div class="container">
+    <h1><gradient-wrapper>Test APP</gradient-wrapper></h1>
+    <button onclick="window.location.href='/add-bill'">Add Bill</button>
+    <button onclick="window.location.href='/principal-addition'">Principal Addition</button>
+    <button onclick="window.location.href='/repayment'">Repayment</button>
+    <button onclick="window.location.href='/release'">Release</button>
+    <button onclick="window.location.href='/find-bill'">Find Bill</button>
+    <button onclick="window.location.href='/calculate-interest'">Calculate Interest</button>
+  </div>
+
+  <script>
+    // Function to create falling "gold coins"
+    function createFallingCoin() {
+      const coin = document.createElement("div");
+      coin.className = "coin";
+      
+      // Randomize the X position and animation duration
+      const xPos = Math.random() * window.innerWidth;
+      const duration = Math.random() * 3 + 2; // Between 2s and 5s
+      coin.style.left = `${xPos}px`;
+      coin.style.animationDuration = `${duration}s`;
+
+      // Randomize size slightly for variety
+      const size = Math.random() * 10 + 15; // Between 15px and 25px
+      coin.style.width = `${size}px`;
+      coin.style.height = `${size}px`;
+
+      document.body.appendChild(coin);
+
+      // Remove the coin after it falls
+      coin.addEventListener('animationend', () => {
+        coin.remove();
+      });
+    }
+
+    // Create coins at intervals
+    setInterval(createFallingCoin, 400); // Adjust interval as needed
+  </script>
+</body>
+</html>

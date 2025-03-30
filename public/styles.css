@@ -1,0 +1,316 @@
+/* Global styles */
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+/* Heading styles */
+h1 {
+  color: #333;
+  margin-top: 20px;
+}
+
+/* Button styles */
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  font-size: 16px;
+  background: linear-gradient(to right, #DA4453, #89216B); /* For Sunset Bliss */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Button hover effect */
+button:hover {
+  background: linear-gradient(to left, #DA4453, #89216B);
+}
+
+/* Disabled button styles */
+button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Container styles */
+.container {
+  margin: 20px auto;
+  max-width: 800px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+/* Gradient Wrapper Tag */
+gradient-wrapper {
+  display: inline;
+  background: linear-gradient(to right, #DA4453, #89216B);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent; /* For better browser compatibility */
+}
+/* Back button styles with arrow */
+.back-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(to right, #DA4453, #89216B);
+  padding: 8px 15px;
+  border-radius: 5px;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Success Animation Modal */
+.success-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+.success-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.checkmark-circle {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  margin: 0 auto 20px;
+}
+
+.checkmark__circle {
+  stroke: #4CAF50;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark {
+  width: 100px;
+  height: 100px;
+}
+
+.checkmark__check {
+  stroke: #4CAF50;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.success-content p {
+  color: #333;
+  font-size: 18px;
+  margin: 0;
+}
+
+/* Arrow icon for back button */
+.back-button::before {
+  content: '←';
+  margin-right: 5px;
+  font-size: 16px;
+}
+
+/* Form styles */
+form div {
+  margin: 10px 0;
+  text-align: left;
+}
+
+/* Label styles */
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+/* Input, textarea, and select styles */
+input, textarea, select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+textarea {
+  height: 80px;
+  resize: vertical;
+}
+
+/* Card styles for bill results */
+.results {
+  margin-top: 20px;
+}
+
+/* Bill Card with Gradient Border */
+.bill-card {
+  background-color: #f9f9f9;
+  border: 3px solid transparent; /* Default border to prevent layout shift */
+  border-radius: 15px;
+  padding: 15px;
+  margin: 10px 0;
+  position: relative;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  /* border-image-source: linear-gradient(to right, #ccc, #89216B); Gradient Border */
+  /* border-image-slice: 1; Ensures the gradient is stretched to fit the border */
+  display: flex; /* Use flexbox to align content and buttons */
+  justify-content: space-between; /* Space between content and buttons */
+  align-items: flex-start; /* Align items at the top */
+  gap: 20px; /* Space between content and buttons */
+}
+
+/* Bill Card Header */
+.bill-card h3 {
+  margin: 0 0 10px;
+  color: #115103; /* Header color */
+}
+
+/* Bill Card Text */
+.bill-card p {
+  margin: 5px 0; /* Text margin */
+}
+
+/* Content inside the bill card (left side) */
+.bill-card-content {
+  flex: 1; /* Take up remaining space on the left */
+  text-align: left;
+}
+
+/* Action buttons (right side, stacked vertically) */
+.action-buttons {
+  margin-top: 30px;
+  margin-right: 50px;
+  display: flex;
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 25px; /* Space between buttons */
+  align-items: flex-end; /* Align buttons to the right */
+}
+
+.action-buttons button {
+  background: linear-gradient(to right, #077416, #0e4202 ); /* Greenish Gradient */
+  padding: 8px 15px;
+  font-size: 14px;
+  width: 150px; /* Fixed width for buttons to align them neatly */
+  text-align: center;
+}
+
+/* Back button margin in form */
+.back-button-form {
+  margin-top: 20px;
+}
+/* Photo Section */
+.photo-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.photo-container {
+  text-align: center;
+}
+
+.photo-container video,
+.photo-container img {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  border: 2px solid #DA4453;
+  border-image: linear-gradient(to right, #dfd8d9, #89216B) 1;
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+
+.modal-left {
+  flex: 1;
+  text-align: left;
+  padding-right: 20px;
+}
+
+.modal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-right img {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Toast Styles */
+.toast {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(to right, #077416, #0e4202);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  z-index: 1001;
+}

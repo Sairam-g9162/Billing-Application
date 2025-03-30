@@ -1,0 +1,323 @@
+<!-- views/calculate-interest.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculate Interest</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .back-button {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 8px 16px;
+      background: linear-gradient(to right, #DA4453, #89216B);;
+      color: #f3f3f3;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    
+    .search-form {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    
+    .search-form input[type="text"] {
+      padding: 8px;
+      width: 200px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .search-form button {
+      padding: 8px 16px;
+      background: linear-gradient(to right, #DA4453, #89216B);;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .error {
+      color: red;
+      margin-bottom: 15px;
+    }
+    
+    .bill-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .bill-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    
+    .bill-detail {
+      margin-bottom: 10px;
+    }
+    
+    .bill-detail strong {
+      display: block;
+      font-size: 0.9em;
+      color: #555;
+    }
+    
+    .calculation-form {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f0f7ff;
+      border-radius: 4px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .result-section {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f0fff0;
+      border-radius: 4px;
+      border-left: 4px solid #4CAF50;
+    }
+    
+    .interest-details {
+      margin-top: 20px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    .total-row {
+      font-weight: bold;
+      background-color: #eafaea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-button">Home</a>
+    <h1>Calculate Interest</h1>
+    
+    <!-- Search Form -->
+    <div class="search-form">
+      <form method="GET" action="/calculate-interest">
+        <div>
+          <label for="billNumber">Enter Bill Number:</label>
+          <input type="text" id="billNumber" name="billNumber" value="<%= locals.searchBillNumber || '' %>" required>
+        </div>
+        <button type="submit">Fetch & Calculate</button>
+      </form>
+    </div>
+    
+    <!-- Error Messages -->
+    <% if (locals.error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+    
+    <!-- Bill Details Card -->
+    <% if (locals.bill) { %>
+      <div class="bill-card">
+        <h2>Bill Details</h2>
+        <div class="bill-details">
+          <div class="bill-detail">
+            <strong>Bill Number:</strong>
+            <%= bill["Bill Number"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>Date:</strong>
+            <%= bill["Date"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>Name:</strong>
+            <%= bill["Name"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>Phone Number:</strong>
+            <%= bill["Phone Number"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>Initial Pledged Amount:</strong>
+            <%= bill["Initial Pledged Amount"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>Gold/Silver:</strong>
+            <%= bill["Gold/Silver"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>No. of Items:</strong>
+            <%= bill["No_of_items"] %>
+          </div>
+          <div class="bill-detail">
+            <strong>Default Interest Rate:</strong>
+            <%= bill["Interest Rate"] %>%
+          </div>
+        </div>
+        
+        <!-- Principle Additions -->
+        <% if (bill["Principle_Adding_His"] && Object.keys(bill["Principle_Adding_His"]).length > 0) { %>
+          <div class="bill-detail">
+            <strong>Principal Additions:</strong>
+            <ul>
+              <% for (const [date, amount] of Object.entries(bill["Principle_Adding_His"])) { %>
+                <li><%= date %>: ₹<%= amount %></li>
+              <% } %>
+            </ul>
+          </div>
+        <% } %>
+        
+        <!-- Repayments -->
+        <% if (bill["Repay History"] && Object.keys(bill["Repay History"]).length > 0) { %>
+          <div class="bill-detail">
+            <strong>Repayments:</strong>
+            <ul>
+              <% for (const [date, amount] of Object.entries(bill["Repay History"])) { %>
+                <li><%= date %>: ₹<%= amount %></li>
+              <% } %>
+            </ul>
+          </div>
+        <% } %>
+        
+        <!-- Interest Calculation Form -->
+        <div class="calculation-form">
+          <h3>Calculate Interest</h3>
+          <form method="POST" action="/calculate-interest">
+            <input type="hidden" name="billNumber" value="<%= bill['Bill Number'] %>">
+            
+            <div class="form-group">
+              <label for="interestRate">Interest Rate (%):</label>
+              <input type="number" id="interestRate" name="interestRate" step="0.01" value="<%= locals.interestRate || bill['Interest Rate'] %>" required>
+            </div>
+            
+            <div class="form-group">
+              <label>Interest Type:</label>
+              <div class="radio-group">
+                <div>
+                  <input type="radio" id="monthly" name="interestType" value="monthly" <%= locals.interestType === 'monthly' ? 'checked' : '' %> required>
+                  <label for="monthly">Monthly</label>
+                </div>
+                <div>
+                  <input type="radio" id="yearly" name="interestType" value="yearly" <%= locals.interestType === 'yearly' ? 'checked' : '' %> required>
+                  <label for="yearly">Yearly</label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="calculationDate">Calculation Date (DD-MM-YYYY):</label>
+              <input type="text" id="calculationDate" name="calculationDate" 
+                     value="<%= locals.calculationDate || new Date().toLocaleDateString('en-GB', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '-') %>" 
+                     pattern="[0-9]{2}-[0-9]{2}-[0-9]{4}" 
+                     placeholder="DD-MM-YYYY">
+              <small>Leave blank for current date</small>
+            </div>
+            
+            <button type="submit">Calculate</button>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Calculation Results -->
+      <% if (locals.calculationResult) { %>
+        <div class="result-section">
+          <h2>Calculation Results</h2>
+          
+          <div class="summary">
+            <p><strong>Total Remaining Principal:</strong> ₹<%= calculationResult.remainingPrincipal.toFixed(2) %></p>
+            <p><strong>Total Interest:</strong> ₹<%= calculationResult.totalInterest.toFixed(2) %></p>
+            <p><strong>Total Amount to be Paid:</strong> ₹<%= calculationResult.totalAmount.toFixed(2) %></p>
+          </div>
+          
+          <div class="interest-details">
+            <h3>Interest Calculation Details</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Months</th>
+                  <th>Principal (₹)</th>
+                  <th>Interest (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% calculationResult.interestDetails.forEach((detail) => { %>
+                  <tr>
+                    <td><%= detail.fromDate %> to <%= detail.toDate %></td>
+                    <td><%= detail.months %></td>
+                    <td><%= detail.principal.toFixed(2) %></td>
+                    <td><%= detail.interest.toFixed(2) %></td>
+                  </tr>
+                <% }); %>
+                <tr class="total-row">
+                  <td colspan="2">Total</td>
+                  <td><%= calculationResult.remainingPrincipal.toFixed(2) %></td>
+                  <td><%= calculationResult.totalInterest.toFixed(2) %></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</body>
+</html>

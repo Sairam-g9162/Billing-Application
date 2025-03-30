@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Find Bill</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-button">Home</a>
+    <h1>Find Bill</h1>
+
+    <!-- Display error message -->
+    <% if (error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+
+    <!-- Search Form -->
+    <form action="/find-bill" method="POST">
+      <div>
+        <label for="searchBy">Search By:</label>
+        <select id="searchBy" name="searchBy" required>
+          <option value="mobile">Mobile Number</option>
+          <option value="aadhar">Aadhar Number</option>
+          <option value="bill">Bill Number</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="searchValue">Search Value:</label>
+        <input type="text" id="searchValue" name="searchValue" required>
+      </div>
+
+      <button type="submit">Find Bill</button>
+    </form>
+
+    <!-- Display Results -->
+    <div class="results">
+      <% if (results.length > 0) { %>
+        <% results.forEach(bill => { %>
+          <div class="bill-card">
+            <!-- Bill Details (Left Side) -->
+            <div class="bill-card-content">
+              <h3>Bill Number: <%= bill["Bill Number"] %></h3>
+              <p><strong>Status:</strong> <%= bill["Status"] %></p>
+              <p><strong>Name:</strong> <%= bill["Name"] %></p>
+              <p><strong>Date:</strong> <%= bill["Date"] %></p>
+              <p><strong>Phone Number:</strong> <%= bill["Phone Number"] %></p>
+              <p><strong>Address:</strong> <%= bill["Address"] %></p>
+              <p><strong>Gold/Silver:</strong> <%= bill["Gold/Silver"] %></p>
+              <p><strong>Number of Items:</strong> <%= bill["No_of_items"] %></p>
+              <p><strong>Items:</strong> <%= bill["Items"] %></p>
+              <p><strong>Interest Rate:</strong> <%= bill["Interest Rate"] %>%</p>
+              <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
+              
+              <!-- Calculate and display Amount to be Paid with dynamic current date -->
+              <% 
+                const billDate = new Date(bill["Date"]);
+                const currentDate = new Date(); // Dynamically fetches today's date
+                const timeDiffMs = currentDate - billDate; // Difference in milliseconds
+                const timeDiffDays = timeDiffMs / (1000 * 60 * 60 * 24); // Convert to days
+                const timeDiffYears = timeDiffDays / 365; // Convert to years
+                
+                const principal = parseFloat(bill["Initial Pledged Amount"]);
+                const interestRate = parseFloat(bill["Interest Rate"]); // Annual interest rate in %
+                const interest = (principal * interestRate * timeDiffYears) / 100; // Simple interest
+                const totalAmount = principal + interest; // Total amount to be paid
+              %>
+              <h3><gradient-wrapper>Amount to be Paid:</gradient-wrapper> <span style="color: rgb(183, 8, 8);"><%= totalAmount.toFixed(0) %></span></h3>
+
+              <% if (bill["Status"] === 'Released') { %>
+                <p><strong>Released Date:</strong> <%= bill["Released Date"] %></p>
+                <p><strong>Released Remarks:</strong> <%= bill["Released Remarks"] || 'N/A' %></p>
+              <% } %>
+            </div>
+
+            <!-- Action Buttons (Right Side, Stacked Vertically) -->
+            <div class="action-buttons">
+              <button onclick="window.location.href='/principal-addition?billNumber=<%= bill['Bill Number'] %>'">Principal Addition</button>
+              <button onclick="window.location.href='/repayment?billNumber=<%= bill['Bill Number'] %>'">Repayment</button>
+              <button onclick="window.location.href='/release?billNumber=<%= bill['Bill Number'] %>'" 
+                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Release</button>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+
+    <!-- Back to Home Button -->
+    <button onclick="window.location.href='/'">Back to Home Page</button>
+  </div>
+</body>
+</html>

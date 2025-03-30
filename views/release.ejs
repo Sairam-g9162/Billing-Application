@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Release Bill</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    /* Bill card layout */
+    .bill-card {
+      display: flex;
+      flex-direction: row;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    
+    .bill-card-content {
+      flex: 1;
+      padding: 15px;
+    }
+    
+    .bill-card-content h3 {
+      margin: 0 0 10px 0;
+      color: #b70808; /* Dark red for bill number */
+    }
+    
+    .action-buttons {
+      width: 200px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px solid #ddd;
+    }
+    
+    .action-buttons button {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 8px;
+      cursor: pointer;
+    }
+    
+    .action-buttons button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    /* History tables */
+    .history-section {
+      margin-top: 20px;
+      padding: 15px;
+      /* border-top: 1px solid #ddd; */
+      width: 100%;
+    }
+    
+    .history-tables {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .history-table {
+      flex: 1;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+    }
+    
+    gradient-wrapper {
+      font-weight: bold;
+    }
+    
+    /* Modal styles remain the same */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 50%;
+      max-width: 500px;
+      border-radius: 5px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+    }
+    
+    .confirmation-details {
+      margin: 20px 0;
+    }
+    
+    .confirmation-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    /* Success message */
+    .success-message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #4CAF50;
+      color: white;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+      z-index: 999;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      animation: fadeInOut 3s ease-in-out;
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
+    /* Form styles */
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-button">Home</a>
+    <h1>Release Bill</h1>
+
+    <!-- Search Form -->
+    <form action="/release" method="GET">
+      <div>
+        <label for="billNumber">Bill Number:</label>
+        <input type="text" id="billNumber" name="billNumber" value="<%= typeof searchBillNumber !== 'undefined' ? searchBillNumber : '' %>" required>
+      </div>
+      <button type="submit">Find Bill</button>
+    </form>
+
+    <!-- Display error message -->
+    <% if (typeof error !== 'undefined' && error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+
+    <!-- Display Bill Details -->
+    <% if (typeof bill !== 'undefined' && bill) { %>
+      <div class="bill-card">
+        <!-- Bill Details (Left Side) -->
+        <div class="bill-card-content">
+          <h3>Bill Number: <%= bill["Bill Number"] %></h3>
+          <p><strong>Status:</strong> <span <%= bill["Status"] === 'Released' ? 'style="color: #b70808;"' : '' %>><%= bill["Status"] %></span></p>
+          <p><strong>Name:</strong> <%= bill["Name"] %></p>
+          <p><strong>Date:</strong> <%= bill["Date"] %></p>
+          <p><strong>Phone Number:</strong> <%= bill["Phone Number"] %></p>
+          <p><strong>Address:</strong> <%= bill["Address"] %></p>
+          <p><strong>Gold/Silver:</strong> <%= bill["Gold/Silver"] %></p>
+          <p><strong>Number of Items:</strong> <%= bill["No_of_items"] %></p>
+          <p><strong>Items:</strong> <%= bill["Items"] %></p>
+          <p><strong>Interest Rate:</strong> <%= bill["Interest Rate"] %>%</p>
+          <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
+
+          
+          <% if (bill["Status"] === 'Released') { %>
+            <p><strong>Released Date:</strong> <%= bill["Released Date"] %></p>
+            <p><strong>Released Remarks:</strong> <%= bill["Released Remarks"] || 'N/A' %></p>
+          <% } %>
+        </div>
+        
+        <!-- Action Buttons (Right Side) -->
+        <div class="action-buttons">
+          <% if (bill["Status"] !== 'Released') { %>
+            <button id="releaseButton" onclick="openReleaseModal()">Release</button>
+          <% } else { %>
+            <button disabled>Release</button>
+          <% } %>
+        </div>
+      </div>
+      
+      <!-- History Section -->
+      <div class="history-section">
+        <div class="history-tables">
+          <!-- Principal Addition History -->
+          <div class="history-table">
+            <h4><gradient-wrapper>Principal Addition History</gradient-wrapper></h4>
+            <%
+              let principalHistory = {};
+              if (bill["Principle_Adding_His"]) {
+                try {
+                  principalHistory = JSON.parse(bill["Principle_Adding_His"]);
+                } catch(e) {
+                  principalHistory = {};
+                }
+              }
+            %>
+            
+            <% if (Object.keys(principalHistory).length > 0) { %>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% Object.entries(principalHistory).forEach(([date, amount]) => { %>
+                    <tr>
+                      <td><%= date %></td>
+                      <td><%= amount %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            <% } else { %>
+              <p>No principal addition history found</p>
+            <% } %>
+          </div>
+          
+          <!-- Repayment History -->
+          <div class="history-table">
+            <h4><gradient-wrapper>Repayment History</gradient-wrapper></h4>
+            <%
+              let repaymentHistory = {};
+              if (bill["Repay History"] && bill["Repay History"] !== 'null') {
+                try {
+                  repaymentHistory = JSON.parse(bill["Repay History"]);
+                } catch(e) {
+                  repaymentHistory = {};
+                }
+              }
+            %>
+            
+            <% if (Object.keys(repaymentHistory).length > 0) { %>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% Object.entries(repaymentHistory).forEach(([date, amount]) => { %>
+                    <tr>
+                      <td><%= date %></td>
+                      <td><%= amount %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            <% } else { %>
+              <p>No repayment history found</p>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <!-- Release Confirmation Modal -->
+    <div id="releaseModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeReleaseModal()">&times;</span>
+        <h2>Confirm Release</h2>
+        
+        <% if (typeof bill !== 'undefined' && bill) { %>
+          <div class="confirmation-details">
+            <p><strong>Bill Number:</strong> <%= bill["Bill Number"] %></p>
+            <p><strong>Name:</strong> <%= bill["Name"] %></p>
+            <p><strong>Date:</strong> <%= bill["Date"] %></p>
+            <p><strong>Amount Due:</strong> <%= typeof amountDue !== 'undefined' ? amountDue.toFixed(0) : '0' %></p>
+          </div>
+          
+          <form id="releaseForm" action="/release-bill" method="POST">
+            <input type="hidden" name="billNumber" value="<%= bill['Bill Number'] %>">
+            
+            <div>
+              <label for="remarks">Release Remarks:</label>
+              <textarea id="remarks" name="remarks" rows="3" required></textarea>
+            </div>
+            
+            <div class="confirmation-actions">
+              <button type="button" onclick="closeReleaseModal()">Cancel</button>
+              <button type="submit">Confirm Release</button>
+            </div>
+          </form>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message">
+      <h3>Bill Released Successfully!</h3>
+      <p>The bill has been released.</p>
+    </div>
+
+    <!-- Back to Home Button -->
+    <button onclick="window.location.href='/'">Back to Home Page</button>
+  </div>
+
+  <script>
+    // Modal functions
+    function openReleaseModal() {
+      document.getElementById('releaseModal').style.display = 'block';
+    }
+    
+    function closeReleaseModal() {
+      document.getElementById('releaseModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+      const modal = document.getElementById('releaseModal');
+      if (event.target === modal) {
+        closeReleaseModal();
+      }
+    }
+    
+    // Handle form submission and show success message
+    document.getElementById('releaseForm')?.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Submit the form via AJAX
+      const formData = new FormData(this);
+      
+      fetch('/release-bill', {
+        method: 'POST',
+        body: new URLSearchParams(formData),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          // Close the modal
+          closeReleaseModal();
+          
+          // Show success message with animation
+          const successMessage = document.getElementById('successMessage');
+          successMessage.style.display = 'block';
+          
+          // Update UI to reflect released status
+          const statusSpan = document.querySelector('.bill-card-content p strong + span');
+          if (statusSpan) {
+            statusSpan.textContent = 'Released';
+            statusSpan.style.color = '#b70808';
+          }
+          
+          // Disable all buttons
+          const buttons = document.querySelectorAll('.action-buttons button');
+          buttons.forEach(button => {
+            button.disabled = true;
+          });
+          
+          // Hide success message after animation
+          setTimeout(() => {
+            successMessage.style.display = 'none';
+            // Reload page to show updated data
+            window.location.reload();
+          }, 3000);
+        } else {
+          alert('There was an error releasing the bill. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('There was an error releasing the bill. Please try again.');
+      });
+    });
+  </script>
+</body>
+</html>

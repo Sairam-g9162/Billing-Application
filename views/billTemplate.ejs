@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pawn Ticket</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .page {
+            width: 210mm;
+            height: 297mm; /* A4 size */
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10mm; /* Added padding for neatness */
+        }
+        .ticket {
+            border: 2px solid #000; /* Darker border */
+            padding: 5px; /* Reduced padding */
+            width: 90%; /* Reduced width to fit A4 better */
+            margin: 0 auto; /* Centering */
+            page-break-inside: avoid;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10mm; /* Added space between tickets */
+        }
+        .header {
+            text-align: center;
+            position: relative;
+            margin-bottom: 5mm; /* Added margin for spacing */
+        }
+        .header h1 {
+            font-size: 20px;
+            margin: 0; /* Removed margin */
+            color: #005700; /* Green title */
+        }
+        .header .title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #005700;
+            margin: 0; /* Removed margin */
+        }
+        .header img {
+            position: absolute;
+            top: -5px; /* Adjusted position */
+            left: 10px;
+            width: 50px;
+            height: auto;
+        }
+        .header .pbl-number {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: green;
+        }
+        .header .phone {
+            position: absolute;
+            top: 25px;
+            right: 10px;
+            font-size: 12px;
+            color: #005700;
+        }
+        .header .address {
+            color: green;
+            font-size: 12px;
+            margin: 0; /* Removed margin */
+        }
+        .green-line {
+            height: 2px;
+            background-color: green;
+            margin: 0; /* Removed margin */
+        }
+        .details {
+            margin: 0; /* Removed margin */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5mm; /* Added space below details */
+        }
+        .details label {
+            display: block;
+            font-weight: bold;
+            margin: 0; /* Removed margin */
+        }
+        .user-photo {
+            text-align: center;
+            margin-left: 5px; /* Reduced margin */
+        }
+        .user-photo img {
+            width: 40mm; /* Increased width */
+            height: 50mm; /* Increased height */
+            border-radius: 5px; /* Optional: for slight rounding */
+        }
+        .item-photo {
+            text-align: center;
+            margin-left: 5px; /* Reduced margin */
+            margin-top: 0; /* No margin */
+        }
+        .item-photo img {
+            width: 40mm; /* Increased width */
+            height: 50mm; /* Increased height */
+            border-radius: 5px; /* Optional: for slight rounding */
+        }
+        .photo-container {
+            display: flex; /* Arrange photos in a row */
+            align-items: center; /* Center align vertically */
+        }
+        table {
+            width: 100%; /* Full width */
+            border-collapse: collapse;
+            margin: 0; /* Removed margin */
+            margin-top: 5mm; /* Added space between details and table */
+        }
+        table th, table td {
+            border: 1px solid #000;
+            padding: 2px; /* Reduced padding */
+            text-align: left;
+        }
+        table th {
+            background-color: #f0f0f0;
+        }
+        .footer {
+            margin-top: 5mm; /* Added margin for spacing */
+            display: flex;
+            justify-content: space-between; /* Space between signature and label */
+        }
+        .footer p {
+            margin: 2px 0; /* Reduced margin */
+        }
+        .signature {
+            text-align: right; /* Align signature to the right */
+            margin-top: 10px; /* Added margin for spacing */
+        }
+        .dotted-line {
+            border-top: 2px dotted #000;
+            margin: 0; /* Removed margin */
+        }
+        .gap {
+            margin-bottom: 2mm; /* Added gap below the dotted line */
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+            .page {
+                width: 100%;
+                height: auto;
+                margin: 0;
+                padding: 0; /* Remove padding for printing */
+            }
+            .ticket {
+                margin: 0 auto;
+                page-break-inside: avoid;
+            }
+            #printButton, #cancelButton {
+                display: none;
+            }
+        }
+        .no-print {
+            margin: 20px 0;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button id="printButton" onclick="window.print()">Print</button>
+        <button id="cancelButton" onclick="window.location.href='/print'">Cancel</button>
+    </div>
+
+    <div class="page">
+        <!-- Ticket 1 -->
+        <div class="ticket">
+            <div class="header">
+                <img src="/images/logo.svg" alt="Logo" style="top: -5px;">
+                <div class="pbl-number">P.B.L.No.03-03/04</div>
+                <div class="phone">Phone: 9944339937</div>
+                <h1>சாந்தி பான் புரோக்கர்ஸ்</h1>
+                <p class="title">Pawn Ticket | அடகு சீட்டு</p>
+                <p class="address">எண். 37, அமிர்தி தெரு, ஜாமுனமுத்தூர்-635703</p>
+            </div>
+            <div class="green-line"></div>
+            
+            <div class="details">
+                <div>
+                    <label>Pledge No: <span><%= bill["Bill Number"] %></span></label>
+                    <label>Date: <span><%= bill["Date"] %></span></label>
+                    <label>Name: <span><%= bill["Name"] %></span></label>
+                    <label>S/O|W/O: <span><%= bill["Name"].split(' ')[0] %></span></label>
+                    <label>Address: <span><%= bill["Address"] %></span></label>
+                    <label>Loan Amount: <span><b>₹<%= formatCurrency(bill["Initial Pledged Amount"]) %></b></span></label>
+                </div>
+                <% if (withPhotos) { %>
+                <div class="photo-container">
+                    <div class="user-photo">
+                        <img src="<%= userPhoto %>" alt="User Photo">
+                    </div>
+                    <div class="item-photo">
+                        <img src="<%= itemPhoto %>" alt="Item Photo">
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pledge Articles</th>
+                        <th>Gross Weight (gms)</th>
+                        <th>Value (Rs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                    let itemsArray = [];
+                    try {
+                        itemsArray = JSON.parse(bill["Items"]); 
+                    } catch(e) {
+                        // If not valid JSON, try to use as is
+                        if (typeof bill["Items"] === 'string') {
+                            itemsArray = [{ item: bill["Items"], weight: "N/A", value: "N/A" }];
+                        }
+                    }
+                    
+                    if (!Array.isArray(itemsArray)) {
+                        itemsArray = [{ item: "Item information not available", weight: "N/A", value: "N/A" }];
+                    }
+                    
+                    for(let i = 0; i < itemsArray.length; i++) {
+                        const item = itemsArray[i];
+                    %>
+                    <tr>
+                        <td><%= item.item || item.name || "Item " + (i+1) %></td>
+                        <td><%= item.weight || "N/A" %></td>
+                        <td><%= item.value ? "₹" + formatCurrency(item.value) : "N/A" %></td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <div class="footer">
+                <p>Interest: <%= bill["Interest Rate"] %>% per annum</p>
+                <div class="signature">
+                    <p>Signature: ___________________________</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="gap"></div> <!-- Added gap here -->
+        <div class="dotted-line"></div>
+        <div class="gap"></div> <!-- Added gap here -->
+
+        <!-- Ticket 2 (Duplicate) -->
+        <div class="ticket">
+            <div class="header">
+                <img src="/images/logo.svg" alt="Logo" style="top: -5px;">
+                <div class="pbl-number">P.B.L.No.03-03/04</div>
+                <div class="phone">Phone: 9944339937</div>
+                <h1>சாந்தி பான் புரோக்கர்ஸ்</h1>
+                <p class="title">Pawn Ticket | அடகு சீட்டு</p>
+                <p class="address">எண். 37, அமிர்தி தெரு, ஜாமுனமுத்தூர்-635703</p>
+            </div>
+            <div class="green-line"></div>
+            
+            <div class="details">
+                <div>
+                    <label>Pledge No: <span><%= bill["Bill Number"] %></span></label>
+                    <label>Date: <span><%= bill["Date"] %></span></label>
+                    <label>Name: <span><%= bill["Name"] %></span></label>
+                    <label>S/O|W/O: <span><%= bill["Name"].split(' ')[0] %></span></label>
+                    <label>Address: <span><%= bill["Address"] %></span></label>
+                    <label>Loan Amount: <span><b>₹<%= formatCurrency(bill["Initial Pledged Amount"]) %></b></span></label>
+                </div>
+                <% if (withPhotos) { %>
+                <div class="photo-container">
+                    <div class="user-photo">
+                        <img src="<%= userPhoto %>" alt="User Photo">
+                    </div>
+                    <div class="item-photo">
+                        <img src="<%= itemPhoto %>" alt="Item Photo">
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pledge Articles</th>
+                        <th>Gross Weight (gms)</th>
+                        <th>Value (Rs)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                    for(let i = 0; i < itemsArray.length; i++) {
+                        const item = itemsArray[i];
+                    %>
+                    <tr>
+                        <td><%= item.item || item.name || "Item " + (i+1) %></td>
+                        <td><%= item.weight || "N/A" %></td>
+                        <td><%= item.value ? "₹" + formatCurrency(item.value) : "N/A" %></td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+            <div class="footer">
+                <p>Interest: <%= bill["Interest Rate"] %>% per annum</p>
+                <div class="signature">
+                    <p>Signature: ___________________________</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle cancel button clicks - return to the print form page
+            document.getElementById('cancelButton').addEventListener('click', function() {
+                window.location.href = '/print?billNumber=<%= bill["Bill Number"] %>';
+            });
+
+            // Automatically open print dialog when page loads
+            setTimeout(function() {
+                window.print();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
