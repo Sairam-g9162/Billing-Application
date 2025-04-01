@@ -71,6 +71,20 @@ gradient-wrapper {
   align-items: center;
   justify-content: center;
 }
+.top-right-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(to right, #DA4453, #89216B);
+  padding: 8px 15px;
+  border-radius: 5px;
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 /* Success Animation Modal */
 .success-modal {
   display: none;
@@ -138,6 +152,7 @@ gradient-wrapper {
   content: '←';
   margin-right: 5px;
   font-size: 16px;
+  
 }
 
 /* Form styles */

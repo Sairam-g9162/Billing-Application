@@ -373,7 +373,7 @@ app.post('/add-repayment', express.json(), (req, res) => {
 app.get('/release', (req, res) => {
   const billNumber = req.query.billNumber;
   if (!billNumber) {
-    return res.render('release', { bill: null, error: 'No bill number provided' });
+    return res.render('release', { bill: null, error: null,searchBillNumber: ''  });
   }
 
   const query = `
@@ -540,6 +540,15 @@ app.post('/find-bill', (req, res) => {
 // Route to view all active pledges (for testing)
 app.get('/view-active-pledges', (req, res) => {
   db.all('SELECT * FROM active_pledges', (err, rows) => {
+    if (err) {
+      res.send('Error querying database: ' + err.message);
+    } else {
+      res.json(rows);
+    }
+  });
+});
+app.get('/view-released-pledges', (req, res) => {
+  db.all('SELECT * FROM released_pledges', (err, rows) => {
     if (err) {
       res.send('Error querying database: ' + err.message);
     } else {

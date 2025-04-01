@@ -43,10 +43,10 @@
           <label for="billNumber">Enter Bill Number:</label>
           <input type="text" id="billNumber" name="billNumber" value="<%= locals.searchBillNumber || '' %>" required>
         </div>
-        <button type="submit">Search</button>
+        <button type="submit">Get Details</button>
       </form>
     </div>
-
+    <button class="top-right-button" onclick="window.location.href='/find-bill'">Find Bill ?</button>
     <!-- Display error message -->
     <% if (locals.error) { %>
       <p style="color: red;"><%= error %></p>

@@ -31,7 +31,7 @@
         <input type="text" id="searchValue" name="searchValue" required>
       </div>
 
-      <button type="submit">Find Bill</button>
+      <button type="submit">Get Matching Bills</button>
     </form>
 
     <!-- Display Results -->
@@ -50,8 +50,9 @@
               <p><strong>Gold/Silver:</strong> <%= bill["Gold/Silver"] %></p>
               <p><strong>Number of Items:</strong> <%= bill["No_of_items"] %></p>
               <p><strong>Items:</strong> <%= bill["Items"] %></p>
-              <p><strong>Interest Rate:</strong> <%= bill["Interest Rate"] %>%</p>
               <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
+              <p><strong>Principal Added History:</strong> <%= bill["principleAddingHis"] %></p>
+              <p><strong>Repayment History:</strong> <%= bill["repayHistory"]%></p>
               
              
 

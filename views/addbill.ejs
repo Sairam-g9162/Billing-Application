@@ -121,12 +121,9 @@
       itemFieldsDiv.innerHTML = '';
 
       if (isNaN(noOfItems) || noOfItems < 1) {
-        alert('Please enter a valid number of items (minimum 1).');
+        showFormError('noOfItems', 'Please enter a valid number of items (minimum 1).');
         return;
       }
-
-      // Add styling for the grid layout
-      itemFieldsDiv.className = 'item-grid';
 
       for (let i = 1; i <= noOfItems; i++) {
         const itemRow = document.createElement('div');
@@ -142,7 +139,6 @@
         itemFieldsDiv.appendChild(itemRow);
       }
     }
-
     function validatePhoneNumber(input) {
       // Ensure it's a valid 10-digit phone number
       if (input.value.length > 10) {
@@ -247,7 +243,7 @@
       // Delay form submission slightly to allow toaster to be visible
       setTimeout(() => {
         form.submit();  // This submits to /add-bill as defined in form's action attribute
-      }, 3000);
+      }, 1500);
     }
     
     function showToaster(message, type = 'success') {
@@ -300,15 +296,19 @@
       height: 100%;
       overflow: auto;
       background-color: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
     }
     
     .modal-content {
       background-color: #fefefe;
-      margin: 15% auto;
       padding: 20px;
       border: 1px solid #888;
       width: 60%;
       border-radius: 5px;
+      max-height: 80vh;
+      overflow-y: auto;
+      /* Remove: position, top, transform, margin properties */
     }
     
     .modal-buttons {

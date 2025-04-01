@@ -2,103 +2,222 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bill Management App</title>
+  <title>Shanthi Pawn Brokers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     /* Body styles */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Montserrat', sans-serif;
       text-align: center;
       margin: 0;
       padding: 0;
       height: 100vh;
       overflow: hidden;
-      background: #fff;
-      background-size: 400% 400%;
-      background-image: -moz-radial-gradient();
-      animation: gradientAnimation 15s ease infinite;
+      background: linear-gradient(135deg, #f5f7fa 0%, #eef2f3 100%);
+      position: relative;
     }
 
-    @keyframes gradientAnimation {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    /* Background decorative elements */
+    .bg-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(218, 68, 83, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(137, 33, 107, 0.03) 0%, transparent 50%);
+      opacity: 0.7;
+      z-index: 0;
+    }
+
+    /* Diagonal decorative line */
+    .diagonal-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(218, 68, 83, 0.2), rgba(137, 33, 107, 0.2), transparent);
+      transform: rotate(-5deg);
+      top: 30%;
+      z-index: 0;
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -500px 0; }
+      100% { background-position: 500px 0; }
     }
 
     .container {
-    margin: 50px auto;
-    max-width: 600px;
-    padding: 20px;
-    background-color: transparent; /* Fully transparent */
-    border-radius: 8px;
-    box-shadow: none; /* Remove box-shadow */
-    position: relative;
-    z-index: 1;
-  }
+      margin: 50px auto;
+      max-width: 700px;
+      padding: 30px;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 2;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 1s ease-out;
+    }
 
-  h1 {
-  font-family: 'Great Vibes', cursive;
-  font-size: 5vw; /* Responsive font size based on viewport width */
-  margin-top: 20px;
-  margin-bottom: 20px;
-  text-shadow: 2px 2px 5px #013511;
-  width: 100%; /* Make the width match the container */
-  white-space: nowrap; /* Prevent text from wrapping */
-  overflow: hidden; /* Avoid overflow */
-  text-overflow: ellipsis; /* Optional: adds ellipsis if text overflows */
-}
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 5vw;
+      margin-top: 10px;
+      margin-bottom: 30px;
+      background: linear-gradient(to right, #DA4453, #89216B);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+      position: relative;
+      display: inline-block;
+    }
+
+    h1::after {
+      content: '';
+      position: absolute;
+      width: 80%;
+      height: 3px;
+      background: linear-gradient(to right, transparent, #DA4453, #89216B, transparent);
+      bottom: -10px;
+      left: 10%;
+    }
+
+    .buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 30px;
+    }
 
     button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 16px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 500;
       background: linear-gradient(to right, #DA4453, #89216B);
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: transform 0.3s;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(137, 33, 107, 0.2);
     }
 
     button:hover {
-      background: linear-gradient(to left, #DA4453, #89216B);
-      transform: scale(1.05);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(137, 33, 107, 0.3);
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: 0.5s;
+    }
+
+    button:hover::after {
+      left: 100%;
     }
 
     /* Falling "gold coins" */
     .coin {
       position: absolute;
       top: -50px;
-      width: 20px; /* Size of the coin */
+      width: 20px;
       height: 20px;
-      background: radial-gradient(circle at 30% 30%, #FFD700, #DAA520); /* Gold gradient */
-      border-radius: 50%; /* Circular shape */
+      background: radial-gradient(circle at 30% 30%, #FFD700, #DAA520);
+      border-radius: 50%;
       opacity: 0.9;
       animation: fall linear forwards;
-      box-shadow: 0 0 5px rgba(255, 215, 0, 0.8), inset 0 0 3px rgba(255, 255, 255, 0.5); /* Glow and shine */
-      border: 1px solid #B8860B; /* Darker gold edge */
+      box-shadow: 0 0 5px rgba(255, 215, 0, 0.8), inset 0 0 3px rgba(255, 255, 255, 0.5);
+      border: 1px solid #B8860B;
+      z-index: 1;
     }
 
     @keyframes fall {
       0% {
-        transform: translateY(0) rotate(0deg); /* Start with no rotation */
+        transform: translateY(0) rotate(0deg);
       }
       100% {
-        transform: translateY(100vh) rotate(360deg); /* Fall and spin */
+        transform: translateY(100vh) rotate(360deg);
       }
+    }
+
+    /* Jewelry icon decorations */
+    .jewelry-icon {
+      position: absolute;
+      opacity: 0.1;
+      z-index: 0;
+    }
+
+    .ring-icon {
+      width: 150px;
+      height: 150px;
+      border: 8px solid #DA4453;
+      border-radius: 50%;
+      top: 10%;
+      right: 5%;
+    }
+
+    .necklace-icon {
+      width: 100px;
+      height: 200px;
+      border: 8px solid #89216B;
+      border-radius: 100px 100px 0 0;
+      bottom: 10%;
+      left: 8%;
+    }
+
+    /* Footer styling */
+    .footer {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: #89216B;
+      font-size: 12px;
+      opacity: 0.7;
+      z-index: 2;
     }
   </style>
 </head>
 <body>
-  <!-- Logo image; adjust path as needed -->
+  <!-- Background elements -->
+  <div class="bg-pattern"></div>
+  <div class="diagonal-line"></div>
+  <div class="jewelry-icon ring-icon"></div>
+  <div class="jewelry-icon necklace-icon"></div>
+  
+  <!-- Main content -->
   <div class="container">
-    <h1>Shanthi Jewellers</h1>
-    <button onclick="window.location.href='/add-bill'">Add Bill</button>
-    <button onclick="window.location.href='/principal-addition'">Principal Addition</button>
-    <button onclick="window.location.href='/repayment'">Repayment</button>
-    <button onclick="window.location.href='/release'">Release</button>
-    <button onclick="window.location.href='/find-bill'">Find Bill</button>
-    <button onclick="window.location.href='/calculate-interest'">Calculate Interest</button>
-    <button onclick="window.location.href='/print-bill'">Print Bill</button>
+    <h1>Shanthi Pawn Brokers</h1>
+    <div class="buttons-grid">
+      <button onclick="window.location.href='/add-bill'">Add Bill</button>
+      <button onclick="window.location.href='/principal-addition'">Principal Addition</button>
+      <button onclick="window.location.href='/repayment'">Repayment</button>
+      <button onclick="window.location.href='/release'">Release</button>
+      <button onclick="window.location.href='/find-bill'">Find Bill</button>
+      <button onclick="window.location.href='/calculate-interest'">Calculate Interest</button>
+      <button onclick="window.location.href='/print-bill'">Print Bill</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Luxury Gold & Silver Since 1982
   </div>
 
   <script>
@@ -127,7 +246,43 @@
     }
 
     // Create coins at intervals
-    setInterval(createFallingCoin, 400); // Adjust interval as needed
+    setInterval(createFallingCoin, 400);
+
+    // Add sparkle effect to title
+    function addSparkleToTitle() {
+      const title = document.querySelector('h1');
+      const sparkle = document.createElement('div');
+      sparkle.style.position = 'absolute';
+      sparkle.style.width = '10px';
+      sparkle.style.height = '10px';
+      sparkle.style.background = 'white';
+      sparkle.style.borderRadius = '50%';
+      sparkle.style.boxShadow = '0 0 10px 2px rgba(255, 255, 255, 0.8)';
+      sparkle.style.opacity = '0';
+      sparkle.style.transition = 'all 0.5s ease';
+      
+      // Random position within the title
+      const xPos = Math.random() * title.offsetWidth;
+      const yPos = Math.random() * title.offsetHeight;
+      sparkle.style.left = `${xPos}px`;
+      sparkle.style.top = `${yPos}px`;
+      
+      title.appendChild(sparkle);
+      
+      // Animate sparkle
+      setTimeout(() => {
+        sparkle.style.opacity = '0.8';
+      }, 10);
+      
+      setTimeout(() => {
+        sparkle.style.opacity = '0';
+        setTimeout(() => {
+          sparkle.remove();
+        }, 500);
+      }, 700);
+    }
+    
+    setInterval(addSparkleToTitle, 1000);
   </script>
 </body>
 </html>

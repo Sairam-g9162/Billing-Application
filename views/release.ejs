@@ -173,13 +173,14 @@
     <h1>Release Bill</h1>
     <a href="/" class="back-button">Home</a>
 
+    <button class="top-right-button" onclick="window.location.href='/find-bill'">Find Bill ?</button>
     <!-- Search Form -->
     <form action="/release" method="GET">
       <div>
         <label for="billNumber">Bill Number:</label>
         <input type="text" id="billNumber" name="billNumber" value="<%= typeof searchBillNumber !== 'undefined' ? searchBillNumber : '' %>" required>
       </div>
-      <button type="submit">Find Bill</button>
+      <button type="submit">Get Details</button>
     </form>
 
     <!-- Display error message -->
