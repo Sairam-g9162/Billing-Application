@@ -456,73 +456,117 @@ app.get('/print-bill', (req, res) => {
   });
 });
 
+
 // GET: Render the Find Bill page
+// Display the Find Bill page
 app.get('/find-bill', (req, res) => {
   res.render('findBill', { results: [], error: null });
 });
 
 // POST: Handle the Find Bill search
 app.post('/find-bill', (req, res) => {
-  const { searchBy, searchValue } = req.body;
+  const { 
+    searchBy, 
+    searchValue, 
+    startDate, 
+    endDate,
+    useAdditionalFilter,
+    additionalSearchBy,
+    additionalSearchValue,
+    additionalStartDate,
+    additionalEndDate
+  } = req.body;
 
-  let query;
-  let params;
+  // Base query parts
+  const activeBaseSelect = `
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number" as "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His" as "Principle_Adding_His", "Repay History" as "Repay History", 
+           NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
+    FROM active_pledges
+  `;
+  
+  const releasedBaseSelect = `
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number" as "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His" as "Principle_Adding_His", "Repay History" as "Repay History", 
+           "Released Date", "Released Remarks", 'Released' as "Status"
+    FROM released_pledges
+  `;
 
-  // Define the query based on the search criteria
+  let activeWhereClause = '';
+  let releasedWhereClause = '';
+  let params = [];
+
+  // Handle primary search criteria
   if (searchBy === 'mobile') {
-    query = `
-      SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-             "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-             "Remarks", "Interest Rate", "Initial Pledged Amount", 
-             "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
-      FROM active_pledges 
-      WHERE "Phone Number" = ?
-      UNION
-      SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-             "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-             "Remarks", "Interest Rate", "Initial Pledged Amount", 
-             "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
-      FROM released_pledges 
-      WHERE "Phone Number" = ?
-    `;
-    params = [searchValue, searchValue];
-  } else if (searchBy === 'aadhar') {
-    query = `
-      SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-             "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-             "Remarks", "Interest Rate", "Initial Pledged Amount", 
-             "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
-      FROM active_pledges 
-      WHERE "Aadhar_Number" = ?
-      UNION
-      SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-             "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-             "Remarks", "Interest Rate", "Initial Pledged Amount", 
-             "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
-      FROM released_pledges 
-      WHERE "Aadhar_Number" = ?
-    `;
-    params = [searchValue, searchValue];
-  } else if (searchBy === 'bill') {
-    query = `
-      SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-             "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-             "Remarks", "Interest Rate", "Initial Pledged Amount", 
-             "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
-      FROM active_pledges 
-      WHERE "Bill Number" = ?
-      UNION
-      SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-             "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-             "Remarks", "Interest Rate", "Initial Pledged Amount", 
-             "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
-      FROM released_pledges 
-      WHERE "Bill Number" = ?
-    `;
-    params = [searchValue, searchValue];
+    activeWhereClause = `WHERE "Phone Number" = ?`;
+    releasedWhereClause = `WHERE "Phone Number" = ?`;
+    params.push(searchValue, searchValue);
+  } 
+  else if (searchBy === 'aadhar') {
+    activeWhereClause = `WHERE "Aadhar_Number" = ?`;
+    releasedWhereClause = `WHERE "Aadhar_Number" = ?`;
+    params.push(searchValue, searchValue);
+  } 
+  else if (searchBy === 'bill') {
+    activeWhereClause = `WHERE "Bill Number" = ?`;
+    releasedWhereClause = `WHERE "Bill Number" = ?`;
+    params.push(searchValue, searchValue);
+  }
+  else if (searchBy === 'name') {
+    activeWhereClause = `WHERE "Name" LIKE ?`;
+    releasedWhereClause = `WHERE "Name" LIKE ?`;
+    params.push(`%${searchValue}%`, `%${searchValue}%`);
+  }
+  else if (searchBy === 'date') {
+    if (!startDate || !endDate) {
+      return res.render('findBill', { results: [], error: 'Both start and end dates are required for date range search' });
+    }
+    activeWhereClause = `WHERE "Date" BETWEEN ? AND ?`;
+    releasedWhereClause = `WHERE "Date" BETWEEN ? AND ?`;
+    params.push(startDate, endDate, startDate, endDate);
   } else {
     return res.render('findBill', { results: [], error: 'Invalid search criteria' });
   }
+
+  // Handle additional filter if enabled
+  if (useAdditionalFilter === 'on') {
+    if (additionalSearchBy === 'mobile') {
+      activeWhereClause += ` AND "Phone Number" = ?`;
+      releasedWhereClause += ` AND "Phone Number" = ?`;
+      params.push(additionalSearchValue, additionalSearchValue);
+    } 
+    else if (additionalSearchBy === 'aadhar') {
+      activeWhereClause += ` AND "Aadhar_Number" = ?`;
+      releasedWhereClause += ` AND "Aadhar_Number" = ?`;
+      params.push(additionalSearchValue, additionalSearchValue);
+    }
+    else if (additionalSearchBy === 'name') {
+      activeWhereClause += ` AND "Name" LIKE ?`;
+      releasedWhereClause += ` AND "Name" LIKE ?`;
+      params.push(`%${additionalSearchValue}%`, `%${additionalSearchValue}%`);
+    }
+    else if (additionalSearchBy === 'date') {
+      if (!additionalStartDate || !additionalEndDate) {
+        return res.render('findBill', { results: [], error: 'Both start and end dates are required for additional date range filter' });
+      }
+      activeWhereClause += ` AND "Date" BETWEEN ? AND ?`;
+      releasedWhereClause += ` AND "Date" BETWEEN ? AND ?`;
+      params.push(additionalStartDate, additionalEndDate, additionalStartDate, additionalEndDate);
+    }
+  }
+
+  // Construct the final query
+  const query = `
+    ${activeBaseSelect}
+    ${activeWhereClause}
+    UNION
+    ${releasedBaseSelect}
+    ${releasedWhereClause}
+  `;
 
   // Execute the query
   db.all(query, params, (err, rows) => {

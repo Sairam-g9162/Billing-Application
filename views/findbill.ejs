@@ -4,6 +4,180 @@
   <meta charset="UTF-8">
   <title>Find Bill</title>
   <link rel="stylesheet" href="/styles.css">
+  <style>
+    .filter-container {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-header {
+      margin-bottom: 15px;
+      font-size: 20px;
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+      
+      
+    }
+    
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .filter-field {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .filter-divider {
+      width: 100%;
+      margin: 15px 0;
+      border-top: 1px dashed #ccc;
+      position: relative;
+    }
+    
+    .filter-divider-label {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #f8f9fa;
+      padding: 0 10px;
+      color: #666;
+    }
+    
+    .date-range {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .status-filter {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f0f7ff;
+      border-left: 3px solid #4285f4;
+      border-right: 3px solid #4285f4;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .status-filter h3 {
+      margin: 0;
+      margin-right: 15px;
+      font-size: 16px;
+    }
+    
+    .status-filter label {
+      margin-right: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .bill-card.hidden {
+      display: none;
+    }
+    
+    /* Improved inputs and selects */
+    select, input[type="text"], input[type="date"] {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 100%;
+    }
+    
+    select {
+      background-color: white;
+    }
+    
+    button[type="submit"] {
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    button[type="submit"]:hover {
+      background-color: #3367d6;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      margin-right: 10px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+      background-color: #3ac685;
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+    
+    .toggle-label {
+      font-weight: bold;
+      font-size: 15px;
+      color: #333;
+    }
+    
+    .additional-filter-container {
+      background-color: #f0f7ff;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+      border-left: 3px solid #4285f4;
+      border-right: 3px solid #4285f4;
+      transition: all 0.3s ease;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -17,46 +191,237 @@
 
     <!-- Search Form -->
     <form action="/find-bill" method="POST">
-      <div>
-        <label for="searchBy">Search By:</label>
-        <select id="searchBy" name="searchBy" required>
-          <option value="mobile">Mobile Number</option>
-          <option value="aadhar">Aadhar Number</option>
-          <option value="bill">Bill Number</option>
-        </select>
-      </div>
+      <div class="filter-container">
+        <div class="filter-header"><gradient-wrapper><strong>Filters</strong></gradient-wrapper></div>
+        
+        <!-- Primary Search Filter -->
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="searchBy"><gradient-wrapper>Search By:</gradient-wrapper></label>
+            <select id="searchBy" name="searchBy" required>
+              <option value="mobile">Mobile Number</option>
+              <option value="aadhar">Aadhar Number</option>
+              <option value="bill">Bill Number</option>
+              <option value="name">Name</option>
+              <option value="date">Date Range</option>
+            </select>
+          </div>
 
-      <div>
-        <label for="searchValue">Search Value:</label>
-        <input type="text" id="searchValue" name="searchValue" required>
-      </div>
+          <!-- Search Value field (shown/hidden based on selection) -->
+          <div class="filter-field" id="searchValueContainer">
+            <label for="searchValue"><gradient-wrapper>Search Value:</gradient-wrapper></label>
+            <input type="text" id="searchValue" name="searchValue">
+          </div>
 
-      <button type="submit">Get Matching Bills</button>
+          <!-- Date Range fields (initially hidden) -->
+          <div class="filter-field" id="dateRangeContainer" style="display: none;">
+            <label>Date Range:</label>
+            <div class="date-range">
+              <input type="date" id="startDate" name="startDate" placeholder="From">
+              <span>to</span>
+              <input type="date" id="endDate" name="endDate" placeholder="To">
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Filter Toggle -->
+        <div class="filter-row">
+          <div style="display: flex; align-items: center;">
+            <label class="toggle-switch">
+              <input type="checkbox" id="useAdditionalFilter" name="useAdditionalFilter">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Use Additional Filter</span>
+          </div>
+        </div>
+
+        <!-- Additional Filter (Optional) -->
+        <div id="additionalFilterContainer" class="additional-filter-container" style="display: none;">
+          <div class="filter-row">
+            <div class="filter-field">
+              <label for="additionalSearchBy">Additional Search By:</label>
+              <select id="additionalSearchBy" name="additionalSearchBy">
+                <option value="mobile">Mobile Number</option>
+                <option value="aadhar">Aadhar Number</option>
+                <option value="name">Name</option>
+                <option value="date">Date Range</option>
+              </select>
+            </div>
+
+            <div class="filter-field" id="additionalSearchValueContainer">
+              <label for="additionalSearchValue">Value:</label>
+              <input type="text" id="additionalSearchValue" name="additionalSearchValue">
+            </div>
+
+            <div class="filter-field" id="additionalDateRangeContainer" style="display: none;">
+              <label>Date Range:</label>
+              <div class="date-range">
+                <input type="date" id="additionalStartDate" name="additionalStartDate" placeholder="From">
+                <span>to</span>
+                <input type="date" id="additionalEndDate" name="additionalEndDate" placeholder="To">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="filter-row" style="justify-content: center; margin-top: 20px;">
+          <button type="submit">Get Bills</button>
+        </div>
+      </div>
     </form>
 
+    <!-- Status Filter (visible only when results are present) -->
+    <% if (results.length > 0) { %>
+      <div class="status-filter">
+        <h3>Filter by Status:</h3>
+        <label>
+          <input type="radio" name="statusFilter" value="all" checked> All
+        </label>
+        <label>
+          <input type="radio" name="statusFilter" value="active"> Active
+        </label>
+        <label>
+          <input type="radio" name="statusFilter" value="released"> Released
+        </label>
+      </div>
+    <% } %>
+
+    <!-- Display Results -->
     <!-- Display Results -->
     <div class="results">
       <% if (results.length > 0) { %>
         <% results.forEach(bill => { %>
-          <div class="bill-card" <% if (bill["Status"] === 'Released') { %> style="background-color: #ffebee;" <% } %>>
+          <div class="bill-card <%= bill.Status.toLowerCase() %>" <% if (bill.Status === 'Released') { %> style="background-color: #ffebee;" <% } %>>
             <!-- Bill Details (Left Side) -->
             <div class="bill-card-content">
               <h3>Bill Number: <%= bill["Bill Number"] %></h3>
-              <p><strong>Status:</strong> <%= bill["Status"] %></p>
-              <p><strong>Name:</strong> <%= bill["Name"] %></p>
-              <p><strong>Date:</strong> <%= bill["Date"] %></p>
+              <p><strong>Status:</strong> <%= bill.Status %></p>
+              <p><strong>Name:</strong> <%= bill.Name %></p>
+              <p><strong>Date:</strong> <%= bill.Date %></p>
               <p><strong>Phone Number:</strong> <%= bill["Phone Number"] %></p>
-              <p><strong>Address:</strong> <%= bill["Address"] %></p>
+              <p><strong>Address:</strong> <%= bill.Address %></p>
               <p><strong>Gold/Silver:</strong> <%= bill["Gold/Silver"] %></p>
-              <p><strong>Number of Items:</strong> <%= bill["No_of_items"] %></p>
-              <p><strong>Items:</strong> <%= bill["Items"] %></p>
+              <p><strong>Number of Items:</strong> <%= bill.No_of_items %></p>
+              <p><strong>Items:</strong> <%= bill.Items %></p>
               <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
-              <p><strong>Principal Added History:</strong> <%= bill["principleAddingHis"] %></p>
-              <p><strong>Repayment History:</strong> <%= bill["repayHistory"]%></p>
               
-             
+              <!-- Formatted Principal Added History -->
+              <!-- Formatted Principal Added History -->
+              <div>
+                <strong>Principal Added History:</strong>
+                <% 
+                  let principalHistory = bill.Principle_Adding_His || bill.principleAddingHis || '[]';
+                  
+                  // Check if it's a string (JSON) and parse it
+                  if (typeof principalHistory === 'string') {
+                    try {
+                      // Handle both array format and object format
+                      principalHistory = JSON.parse(principalHistory);
+                      
+                      // Convert object format {date: amount} to array format if needed
+                      if (!Array.isArray(principalHistory) && typeof principalHistory === 'object') {
+                        principalHistory = Object.entries(principalHistory).map(([date, amount]) => ({
+                          date,
+                          amount
+                        }));
+                      }
+                    } catch(e) {
+                      principalHistory = [];
+                    }
+                  }
+                  
+                  if ((Array.isArray(principalHistory) && principalHistory.length > 0) || 
+                      (!Array.isArray(principalHistory) && Object.keys(principalHistory).length > 0)) { 
+                %>
+                  <table style="width: 100%; margin-top: 5px; border-collapse: collapse;">
+                    <thead>
+                      <tr>
+                        <th style="text-align: left; padding: 5px; border-bottom: 1px solid #ddd;">Date</th>
+                        <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% 
+                        if (Array.isArray(principalHistory)) {
+                          principalHistory.forEach(entry => {
+                            let date, amount, remarks;
+                            if (typeof entry === 'object') {
+                              date = entry.date || 'N/A';
+                              amount = entry.amount || '0';
+                              remarks = entry.remarks || '';
+                            }
+                      %>
+                        <tr>
+                          <td style="padding: 5px; border-bottom: 1px solid #eee;"><%= date %></td>
+                          <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">₹<%= amount %></td>
+                        </tr>
+                      <% }); } %>
+                    </tbody>
+                  </table>
+                <% } else { %>
+                  <span>No principal additions</span>
+                <% } %>
+              </div>
 
-              <% if (bill["Status"] === 'Released') { %>
+              <!-- Formatted Repayment History -->
+              <div>
+                <strong>Repayment History:</strong>
+                <% 
+                  let repayHistory = bill["Repay History"] || bill.repayHistory || '[]';
+                  
+                  // Check if it's a string (JSON) and parse it
+                  if (typeof repayHistory === 'string') {
+                    try {
+                      // Handle both array format and object format
+                      repayHistory = JSON.parse(repayHistory);
+                      
+                      // Convert object format {date: amount} to array format if needed
+                      if (!Array.isArray(repayHistory) && typeof repayHistory === 'object') {
+                        repayHistory = Object.entries(repayHistory).map(([date, amount]) => ({
+                          date,
+                          amount
+                        }));
+                      }
+                    } catch(e) {
+                      repayHistory = [];
+                    }
+                  }
+                  
+                  if ((Array.isArray(repayHistory) && repayHistory.length > 0) || 
+                      (!Array.isArray(repayHistory) && Object.keys(repayHistory).length > 0)) { 
+                %>
+                  <table style="width: 100%; margin-top: 5px; border-collapse: collapse;">
+                    <thead>
+                      <tr>
+                        <th style="text-align: left; padding: 5px; border-bottom: 1px solid #ddd;">Date</th>
+                        <th style="text-align: right; padding: 5px; border-bottom: 1px solid #ddd;">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% 
+                        if (Array.isArray(repayHistory)) {
+                          repayHistory.forEach(entry => {
+                            let date, amount, remarks;
+                            if (typeof entry === 'object') {
+                              date = entry.date || 'N/A';
+                              amount = entry.amount || '0';
+                              remarks = entry.remarks || '';
+                            }
+                      %>
+                        <tr>
+                          <td style="padding: 5px; border-bottom: 1px solid #eee;"><%= date %></td>
+                          <td style="text-align: right; padding: 5px; border-bottom: 1px solid #eee;">₹<%= amount %></td>
+                          <td style="padding: 5px; border-bottom: 1px solid #eee;"><%= remarks %></td>
+                        </tr>
+                      <% }); } %>
+                    </tbody>
+                  </table>
+                <% } else { %>
+                  <span>No repayments</span>
+                <% } %>
+              </div>
+              
+              <% if (bill.Status === 'Released') { %>
                 <p><strong>Released Date:</strong> <%= bill["Released Date"] %></p>
                 <p><strong>Released Remarks:</strong> <%= bill["Released Remarks"] || 'N/A' %></p>
               <% } %>
@@ -64,16 +429,16 @@
 
             <!-- Action Buttons (Right Side, Stacked Vertically) -->
             <div class="action-buttons">
-              <button onclick="window.location.href='/principal-addition?billNumber=<%= bill['Bill Number'] %>'"
-                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Principal Addition</button>
-              <button onclick="window.location.href='/repayment?billNumber=<%= bill['Bill Number'] %>'"
-                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Repayment</button>
-              <button onclick="window.location.href='/release?billNumber=<%= bill['Bill Number'] %>'" 
-                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Release</button>
-              <button onclick="window.location.href='/print-bill?billNumber=<%= bill['Bill Number'] %>'"
-                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Print Bill</button>
-              <button onclick="window.location.href='/calculate-interest?billNumber=<%= bill['Bill Number'] %>'"
-                      <% if (bill["Status"] === 'Released') { %> disabled <% } %>>Calculate Interest</button>
+              <button onclick="window.location.href='/principal-addition?billNumber=<%= bill["Bill Number"] %>'"
+                      <% if (bill.Status === 'Released') { %> disabled <% } %>>Principal Addition</button>
+              <button onclick="window.location.href='/repayment?billNumber=<%= bill["Bill Number"] %>'"
+                      <% if (bill.Status === 'Released') { %> disabled <% } %>>Repayment</button>
+              <button onclick="window.location.href='/release?billNumber=<%= bill["Bill Number"] %>'" 
+                      <% if (bill.Status === 'Released') { %> disabled <% } %>>Release</button>
+              <button onclick="window.location.href='/print-bill?billNumber=<%= bill["Bill Number"] %>'"
+                      <% if (bill.Status === 'Released') { %> disabled <% } %>>Print Bill</button>
+              <button onclick="window.location.href='/calculate-interest?billNumber=<%= bill["Bill Number"] %>'"
+                      <% if (bill.Status === 'Released') { %> disabled <% } %>>Calculate Interest</button>
             </div>
           </div>
         <% }); %>
@@ -83,5 +448,74 @@
     <!-- Back to Home Button -->
     <button onclick="window.location.href='/'">Back to Home Page</button>
   </div>
+
+  <script>
+    // Toggle display of search value or date range based on search type
+    document.getElementById('searchBy').addEventListener('change', function() {
+      const searchType = this.value;
+      const valueContainer = document.getElementById('searchValueContainer');
+      const dateContainer = document.getElementById('dateRangeContainer');
+      
+      if (searchType === 'date') {
+        valueContainer.style.display = 'none';
+        dateContainer.style.display = 'block';
+      } else {
+        valueContainer.style.display = 'block';
+        dateContainer.style.display = 'none';
+      }
+    });
+
+    // Toggle display of additional filter with animation
+    document.getElementById('useAdditionalFilter').addEventListener('change', function() {
+      const additionalContainer = document.getElementById('additionalFilterContainer');
+      if (this.checked) {
+        additionalContainer.style.display = 'block';
+        setTimeout(() => {
+          additionalContainer.style.opacity = '1';
+        }, 10);
+      } else {
+        additionalContainer.style.opacity = '0';
+        setTimeout(() => {
+          additionalContainer.style.display = 'none';
+        }, 300);
+      }
+    });
+
+    // Toggle display of additional search value or date range
+    document.getElementById('additionalSearchBy').addEventListener('change', function() {
+      const searchType = this.value;
+      const valueContainer = document.getElementById('additionalSearchValueContainer');
+      const dateContainer = document.getElementById('additionalDateRangeContainer');
+      
+      if (searchType === 'date') {
+        valueContainer.style.display = 'none';
+        dateContainer.style.display = 'block';
+      } else {
+        valueContainer.style.display = 'block';
+        dateContainer.style.display = 'none';
+      }
+    });
+
+    // Status filter functionality
+    const statusRadios = document.querySelectorAll('input[name="statusFilter"]');
+    statusRadios.forEach(radio => {
+      radio.addEventListener('change', function() {
+        const selectedStatus = this.value;
+        const billCards = document.querySelectorAll('.bill-card');
+        
+        billCards.forEach(card => {
+          if (selectedStatus === 'all') {
+            card.classList.remove('hidden');
+          } else if (selectedStatus === 'active' && !card.classList.contains('active')) {
+            card.classList.add('hidden');
+          } else if (selectedStatus === 'released' && !card.classList.contains('released')) {
+            card.classList.add('hidden');
+          } else {
+            card.classList.remove('hidden');
+          }
+        });
+      });
+    });
+  </script>
 </body>
 </html>
