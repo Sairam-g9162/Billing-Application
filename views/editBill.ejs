@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Bill</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .search-container {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .search-form {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .search-form > div {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .search-form button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    
+    .search-form button:hover {
+      background-color: #45a049;
+    }
+    
+    .not-found {
+      color: red;
+      margin: 20px 0;
+      font-weight: bold;
+      text-align: center;
+    }
+    
+    .form-container {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    
+    .form-container.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    /* Success modal styles */
+    .success-modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .success-content {
+      background-color: white;
+      padding: 40px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    .checkmark-circle {
+      width: 80px;
+      height: 80px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    
+    .checkmark__circle {
+      stroke-dasharray: 166;
+      stroke-dashoffset: 166;
+      stroke-width: 2;
+      stroke: #4CAF50;
+      fill: none;
+      animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    
+    .checkmark__check {
+      transform-origin: 50% 50%;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      stroke-width: 3;
+      stroke: #4CAF50;
+      animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    
+    @keyframes stroke {
+      100% {
+        stroke-dashoffset: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-button">Home</a>
+    <h1><gradient-wrapper>Edit Bill</gradient-wrapper></h1>
+    
+    <!-- Display success or error messages -->
+    <% if (error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+    <% if (success) { %>
+      <p style="color: green;"><%= success %></p>
+    <% } %>
+
+    <!-- Search Form -->
+    <div class="search-container">
+      <h2><gradient-wrapper>Search Bill</gradient-wrapper></h2>
+      <form action="/fetch-bill" method="POST" class="search-form">
+        <div>
+          <label for="tableName"><gradient-wrapper>Bill Type:</gradient-wrapper></label>
+          <select id="tableName" name="tableName" required>
+            <option value="active_pledges">Standard Bill</option>
+            <option value="S_active_pledges">S Series Bill</option>
+          </select>
+        </div>
+        <div>
+          <label for="searchBillNumber"><gradient-wrapper>Bill Number:</gradient-wrapper></label>
+          <input type="text" id="searchBillNumber" name="billNumber" required>
+        </div>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <% if (searched && !bill) { %>
+      <div class="not-found">
+        Bill not found. Please check the bill number and type.
+      </div>
+    <% } %>
+
+    <!-- Edit Form -->
+    <div class="form-container <%= bill ? 'active' : '' %>" id="formContainer">
+      <h2><gradient-wrapper>Edit Bill Details</gradient-wrapper></h2>
+      
+      <form action="/update-bill" method="POST" id="billForm">
+        <!-- Hidden field for table name -->
+        <input type="hidden" id="tableName" name="tableName" value="<%= bill ? tableName : '' %>">
+        
+        <div>
+          <label for="billNumber"><gradient-wrapper>Bill Number*</gradient-wrapper></label>
+          <input type="text" id="billNumber" name="billNumber" value="<%= bill ? bill['Bill Number'] : '' %>" readonly>
+        </div>
+        <div>
+          <label for="name"><gradient-wrapper>Name*</gradient-wrapper></label>
+          <input type="text" id="name" name="name" required value="<%= bill ? bill.Name : '' %>">
+        </div>
+        <div>
+          <label for="date"><gradient-wrapper>Date*</gradient-wrapper></label>
+          <input type="date" id="date" name="date" required value="<%= bill ? bill.Date : '' %>" max="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+        <div>
+          <label for="phoneNumber"><gradient-wrapper>Phone Number*</gradient-wrapper></label>
+          <input type="number" id="phoneNumber" name="phoneNumber" required maxlength="10" oninput="validatePhoneNumber(this)" value="<%= bill ? bill['Phone Number'] : '' %>">
+        </div>
+        <div>
+          <label for="address"><gradient-wrapper>Address*</gradient-wrapper></label>
+          <textarea id="address" name="address" required><%= bill ? bill.Address : '' %></textarea>
+        </div>
+        <div>
+          <label for="aadharNumber"><gradient-wrapper>Aadhar Number</gradient-wrapper></label>
+          <input type="number" id="aadharNumber" name="aadharNumber" maxlength="12" oninput="validateAadharNumber(this)" value="<%= bill && bill.Aadhar_Number ? bill.Aadhar_Number : '' %>">
+        </div>
+        <div>
+          <label for="goldSilver"><gradient-wrapper>Gold/Silver*</gradient-wrapper></label>
+          <select id="goldSilver" name="goldSilver" required>
+            <option value="Gold" <%= bill && bill['Gold/Silver'] === 'Gold' ? 'selected' : '' %>>Gold</option>
+            <option value="Silver" <%= bill && bill['Gold/Silver'] === 'Silver' ? 'selected' : '' %>>Silver</option>
+          </select>
+        </div>
+        <div>
+          <label for="noOfItems"><gradient-wrapper>Number of Items*</gradient-wrapper></label>
+          <input type="number" id="noOfItems" name="noOfItems" min="1" required value="<%= bill ? bill.No_of_items : '' %>">
+          <button type="button" onclick="generateItemFields()">Generate Item Fields</button>
+        </div>
+        <div id="itemFields" class="item-grid">
+          <% if (bill && bill.Items) { %>
+            <% let itemIndex = 1; %>
+            <% for (const [itemName, itemWeight] of Object.entries(bill.Items)) { %>
+              <div class="item-row">
+                <div class="item-label">Item <%= itemIndex %>:</div>
+                <div class="item-inputs">
+                  <input type="text" id="itemName<%= itemIndex %>" name="itemName<%= itemIndex %>" value="<%= itemName %>" required>
+                  <input type="text" id="itemWeight<%= itemIndex %>" name="itemWeight<%= itemIndex %>" value="<%= itemWeight.replace('gms', '') %>" required>
+                  <span>gms</span>
+                </div>
+              </div>
+              <% itemIndex++; %>
+            <% } %>
+          <% } %>
+        </div>
+        <div>
+          <label for="remarks"><gradient-wrapper>Remarks</gradient-wrapper></label>
+          <textarea id="remarks" name="remarks"><%= bill && bill.Remarks ? bill.Remarks : '' %></textarea>
+        </div>
+        <div>
+          <label for="interestRate"><gradient-wrapper>Interest Rate (%)*</gradient-wrapper></label>
+          <input type="number" id="interestRate" name="interestRate" step="0.1" required value="<%= bill ? bill['Interest Rate'] : '' %>">
+        </div>
+        <div>
+          <label for="initialPledgedAmount"><gradient-wrapper>Initial Pledged Amount*</gradient-wrapper></label>
+          <input type="number" id="initialPledgedAmount" name="initialPledgedAmount" required value="<%= bill ? bill['Initial Pledged Amount'] : '' %>">
+        </div>
+        <!-- Hidden fields for JSON data -->
+        <input type="hidden" id="items" name="items" value="<%= bill ? JSON.stringify(bill.Items) : '{}' %>">
+        <input type="hidden" id="principleAddingHis" name="principleAddingHis" value="<%= bill && bill.Principle_Adding_His ? JSON.stringify(bill.Principle_Adding_His) : '{}' %>">
+        <input type="hidden" id="repayHistory" name="repayHistory" value="<%= bill && bill.Repay_History ? JSON.stringify(bill.Repay_History) : '{}' %>">
+        
+        <button type="button" onclick="showConfirmation(event)">Preview Changes</button>
+        <button type="submit" style="display:none;" id="submitButton">Update Bill</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-left">
+        <h3><gradient-wrapper>Confirm Bill Updates</gradient-wrapper></h3>
+        <p><strong>Bill Type:</strong> <span id="confirmBillType"></span></p>
+        <p><strong>Bill Number:</strong> <span id="confirmBillNumber"></span></p>
+        <p><strong>Name:</strong> <span id="confirmName"></span></p>
+        <p><strong>Phone Number:</strong> <span id="confirmPhone"></span></p>
+        <p><strong>Pledged Amount:</strong> <span id="confirmAmount"></span></p>
+        <p><strong>Items:</strong> <span id="confirmItems"></span></p>
+        <p><strong>Remarks:</strong> <span id="confirmRemarks"></span></p>
+      </div>
+      <div class="modal-buttons">
+        <button onclick="confirmAndSubmit()">Confirm & Update</button>
+        <button onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Success Modal -->
+  <div id="successModal" class="success-modal">
+    <div class="success-content">
+      <div class="checkmark-circle">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+          <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+      </div>
+      <p id="successMessage">Bill updated successfully!</p>
+    </div>
+  </div>
+
+  <script>
+    // Handle item field generation based on number of items
+    function generateItemFields() {
+      const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      const itemFieldsDiv = document.getElementById('itemFields');
+      itemFieldsDiv.innerHTML = '';
+
+      if (isNaN(noOfItems) || noOfItems < 1) {
+        alert('Please enter a valid number of items (minimum 1).');
+        return;
+      }
+
+      for (let i = 1; i <= noOfItems; i++) {
+        const itemRow = document.createElement('div');
+        itemRow.className = 'item-row';
+        itemRow.innerHTML = `
+          <div class="item-label">Item ${i}:</div>
+          <div class="item-inputs">
+            <input type="text" id="itemName${i}" name="itemName${i}" placeholder="Item name (e.g., Ring)" required>
+            <input type="text" id="itemWeight${i}" name="itemWeight${i}" placeholder="Weight (e.g., 5)" required>
+            <span>gms</span>
+          </div>
+        `;
+        itemFieldsDiv.appendChild(itemRow);
+      }
+    }
+
+    function validatePhoneNumber(input) {
+      // Ensure it's a valid 10-digit phone number
+      if (input.value.length > 10) {
+        input.value = input.value.slice(0, 10);
+      }
+      
+      // Only allow digits
+      input.value = input.value.replace(/[^0-9]/g, '');
+    }
+
+    function validateAadharNumber(input) {
+      // Ensure it's a valid 12-digit Aadhar number
+      if (input.value.length > 12) {
+        input.value = input.value.slice(0, 12);
+      }
+      
+      // Only allow digits
+      input.value = input.value.replace(/[^0-9]/g, '');
+    }
+
+    function validateDate(input) {
+      const selectedDate = new Date(input.value);
+      const today = new Date();
+      
+      // Check if date is not a future date
+      if (selectedDate > today) {
+        alert('Please select a date not in the future.');
+        input.value = today.toISOString().split('T')[0];
+      }
+    }
+
+    function showConfirmation(event) {
+      event.preventDefault();
+      
+      // Validate all required fields
+      const form = document.getElementById('billForm');
+      if (!form.checkValidity()) {
+        // Trigger browser's built-in validation
+        form.reportValidity();
+        return;
+      }
+      
+      // Build the items JSON
+      const itemsObj = buildItemsJson();
+      if (!itemsObj) {
+        return; // Validation failed
+      }
+      
+      // Set the hidden field value
+      document.getElementById('items').value = JSON.stringify(itemsObj);
+
+      // Determine bill type
+      const tableNameField = document.getElementById('tableName');
+      const billTypeText = tableNameField.value === 'S_active_pledges' ? 'S Series' : 'Standard';
+
+      // Set confirmation modal details
+      document.getElementById('confirmBillType').textContent = billTypeText;
+      document.getElementById('confirmBillNumber').textContent = form.billNumber.value;
+      document.getElementById('confirmName').textContent = form.name.value;
+      document.getElementById('confirmPhone').textContent = form.phoneNumber.value;
+      document.getElementById('confirmAmount').textContent = form.initialPledgedAmount.value;
+      
+      // Format the items for display
+      const itemsForDisplay = Object.entries(itemsObj)
+        .map(([name, weight]) => `${name}: ${weight}`)
+        .join(', ');
+      document.getElementById('confirmItems').textContent = itemsForDisplay;
+      
+      document.getElementById('confirmRemarks').textContent = form.remarks.value || 'None';
+
+      document.getElementById('confirmationModal').style.display = 'block';
+    }
+
+    function buildItemsJson() {
+      const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      const itemsObj = {};
+      
+      // Validate all fields are filled
+      for (let i = 1; i <= noOfItems; i++) {
+        const nameInput = document.getElementById(`itemName${i}`);
+        const weightInput = document.getElementById(`itemWeight${i}`);
+        
+        if (!nameInput || !nameInput.value || !weightInput || !weightInput.value) {
+          alert('Please fill in all item details');
+          return null;
+        }
+        
+        // Add to the JSON object with format {"itemName": "weightgms"}
+        itemsObj[nameInput.value] = `${weightInput.value}gms`;
+      }
+      
+      return itemsObj;
+    }
+
+    function closeModal() {
+      document.getElementById('confirmationModal').style.display = 'none';
+    }
+
+    function confirmAndSubmit() {
+      const form = document.getElementById('billForm');
+      closeModal();
+      
+      // Get the bill number from the form
+      const billNumber = form.billNumber.value;
+      
+      // Set the success message with the bill number
+      document.getElementById('successMessage').textContent = `Bill Number ${billNumber} edited successfully!`;
+      
+      // Show the success modal instead of toaster
+      document.getElementById('successModal').style.display = 'flex';
+      
+      // Delay form submission slightly to allow success modal to be visible
+      setTimeout(() => {
+        form.submit();
+      }, 1800);
+    }
+
+    // Add event listener for date validation
+    document.getElementById('date').addEventListener('change', function() {
+      validateDate(this);
+    });
+    
+    // Check for success parameter in URL to show success modal after redirect
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const billNumber = urlParams.get('success');
+      if (billNumber) {
+        document.getElementById('successMessage').textContent = `Bill Number ${billNumber} edited successfully!`;
+        document.getElementById('successModal').style.display = 'flex';
+        setTimeout(() => {
+          document.getElementById('successModal').style.display = 'none';
+        }, 3000);
+      }
+    };
+  </script>
+</body>
+</html>

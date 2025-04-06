@@ -439,6 +439,8 @@
                       <% if (bill.Status === 'Released') { %> disabled <% } %>>Print Bill</button>
               <button onclick="window.location.href='/calculate-interest?billNumber=<%= bill["Bill Number"] %>'"
                       <% if (bill.Status === 'Released') { %> disabled <% } %>>Calculate Interest</button>
+              <button onclick="window.location.href='/edit-bill?billNumber=<%= bill["Bill Number"] %>'"
+                      <% if (bill.Status === 'Released') { %> disabled <% } %>>Edit bill</button>
             </div>
           </div>
         <% }); %>

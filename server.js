@@ -298,6 +298,197 @@ app.post('/add-bill', (req, res) => {
     });
   }
 });
+
+// Add these routes to your server.js file
+
+// Route to display the edit bill form with search functionality
+app.get('/edit-bill', (req, res) => {
+  res.render('editBill', { 
+    error: null, 
+    success: null,
+    bill: null,
+    searched: false
+  });
+});
+
+// Route to fetch a bill by bill number
+app.post('/fetch-bill', (req, res) => {
+  const { billNumber, tableName } = req.body;
+  
+  // Validate the table name to prevent SQL injection
+  const validTableNames = ['active_pledges', 'S_active_pledges'];
+  if (!validTableNames.includes(tableName)) {
+    return res.render('editBill', {
+      error: 'Invalid table selection',
+      success: null,
+      bill: null,
+      searched: true
+    });
+  }
+
+  // Query the database for the bill
+  db.get(`
+    SELECT * FROM ${tableName} 
+    WHERE "Bill Number" = ?
+  `, [billNumber], (err, bill) => {
+    if (err) {
+      console.error('Error fetching bill:', err.message);
+      return res.render('editBill', {
+        error: 'Error fetching bill: ' + err.message,
+        success: null,
+        bill: null,
+        searched: true
+      });
+    }
+    
+    if (!bill) {
+      return res.render('editBill', {
+        error: 'Bill not found',
+        success: null,
+        bill: null,
+        searched: true
+      });
+    }
+    
+    // Parse JSON fields
+    try {
+      bill.Items = JSON.parse(bill.Items);
+      bill.Principle_Adding_His = JSON.parse(bill.Principle_Adding_His || '{}');
+      bill.Repay_History = JSON.parse(bill['Repay History'] || '{}');
+      
+      res.render('editBill', {
+        error: null,
+        success: null,
+        bill: bill,
+        tableName: tableName,
+        searched: true
+      });
+    } catch (error) {
+      console.error('Error parsing JSON data:', error.message);
+      res.render('editBill', {
+        error: 'Error parsing bill data: ' + error.message,
+        success: null,
+        bill: null,
+        searched: true
+      });
+    }
+  });
+});
+
+// Route to update the bill
+app.post('/update-bill', (req, res) => {
+  const {
+    billNumber, name, date, phoneNumber, address, aadharNumber,
+    goldSilver, noOfItems, items, remarks, interestRate, initialPledgedAmount,
+    principleAddingHis, repayHistory, tableName
+  } = req.body;
+  
+  // Validate the table name to prevent SQL injection
+  const validTableNames = ['active_pledges', 'S_active_pledges'];
+  if (!validTableNames.includes(tableName)) {
+    return res.render('editBill', {
+      error: 'Invalid table selection',
+      success: null,
+      bill: null,
+      searched: true
+    });
+  }
+  
+  try {
+    // Parse the items JSON object from the form
+    const itemsObject = items ? JSON.parse(items) : {};
+    
+    // Prepare data for update
+    const data = [
+      name, 
+      date, 
+      phoneNumber, 
+      address, 
+      aadharNumber || null,
+      goldSilver, 
+      noOfItems, 
+      JSON.stringify(itemsObject), 
+      remarks || null,
+      interestRate, 
+      initialPledgedAmount,
+      principleAddingHis || JSON.stringify({}),
+      repayHistory || JSON.stringify({}),
+      billNumber // For WHERE clause
+    ];
+    
+    // Update the appropriate table
+    db.run(`
+      UPDATE ${tableName} SET
+        "Name" = ?, 
+        "Date" = ?, 
+        "Phone Number" = ?, 
+        "Address" = ?, 
+        "Aadhar_Number" = ?, 
+        "Gold/Silver" = ?, 
+        "No_of_items" = ?, 
+        "Items" = ?, 
+        "Remarks" = ?, 
+        "Interest Rate" = ?, 
+        "Initial Pledged Amount" = ?, 
+        "Principle_Adding_His" = ?, 
+        "Repay History" = ?
+      WHERE "Bill Number" = ?
+    `, data, function(err) {
+      if (err) {
+        console.error(`Error updating ${tableName}:`, err.message);
+        
+        // Fetch the bill again to redisplay the form with the error
+        db.get(`SELECT * FROM ${tableName} WHERE "Bill Number" = ?`, [billNumber], (fetchErr, bill) => {
+          if (fetchErr || !bill) {
+            return res.render('editBill', {
+              error: 'Error updating bill and could not fetch original data: ' + (fetchErr ? fetchErr.message : 'Bill not found'),
+              success: null,
+              bill: null,
+              searched: true
+            });
+          }
+          
+          // Parse JSON fields
+          try {
+            bill.Items = JSON.parse(bill.Items);
+            bill.Principle_Adding_His = JSON.parse(bill.Principle_Adding_His || '{}');
+            bill.Repay_History = JSON.parse(bill['Repay History'] || '{}');
+          } catch (parseErr) {
+            console.error('Error parsing JSON:', parseErr);
+          }
+          
+          return res.render('editBill', {
+            error: 'Error updating bill: ' + err.message,
+            success: null,
+            bill: bill,
+            tableName: tableName,
+            searched: true
+          });
+        });
+      } else {
+        if (this.changes === 0) {
+          return res.render('editBill', {
+            error: 'No changes were made. Bill might not exist.',
+            success: null,
+            bill: null,
+            searched: true
+          });
+        }
+        
+        // Redirect to print the updated bill with success parameter
+        res.redirect(`/print-bill?billNumber=${billNumber}&tableName=${tableName}&updated=true`);
+      }
+    });
+  } catch (error) {
+    console.error('Error processing form data:', error.message);
+    res.render('editBill', {
+      error: 'Error processing form data: ' + error.message,
+      success: null,
+      bill: null,
+      searched: true
+    });
+  }
+});
 // GET: Principal Addition page
 // GET route for principal-addition page
 app.get('/principal-addition', (req, res) => {
