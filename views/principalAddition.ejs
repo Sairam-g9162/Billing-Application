@@ -60,7 +60,8 @@
           <p><strong>Name:</strong> <%= bill["Name"] %></p>
           <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
           <p><strong>Pledged Date:</strong> <%= bill['Date']%></p>
-          
+          <button class="print-button" onclick="redirectToPrintBill('<%= bill["Bill Number"] %>')">Print Bill</button>
+
           <!-- Display Principal Addition History in a table -->
           <div class="principal-history">
             <h4><gradient-wrapper>Principal Addition History</gradient-wrapper></h4>
@@ -135,6 +136,7 @@
         <p><strong>Name:</strong> <span id="confirmName"></span></p>
         <p><strong>Date:</strong> <span id="confirmDate"></span></p>
         <p><strong>Amount:</strong> <span id="confirmAmount"></span></p>
+        
       </div>
       <div class="modal-buttons">
         <button onclick="confirmAndSubmit()">Confirm & Submit</button>

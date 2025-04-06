@@ -5,6 +5,13 @@
   <title>Print Bill</title>
   <link rel="stylesheet" href="/styles.css">
   <style>
+    .container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+  }
     .pawn-ticket {
       border: 2px solid black;
       padding: 20px;
@@ -35,14 +42,116 @@
       font-weight: bold;
     }
     .bill-details {
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       font-size: 18px;
-      line-height: 1.6;
+      line-height: 1.4;
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .bill-details-text {
+      width: 60%;
+    }
+    /* Fixed alignment for bill details */
+    .bill-details-text div {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+    }
+    .bill-details-text div strong {
+      width: 150px; /* Increased width for label */
+      min-width: 150px; /* Ensure minimum width */
+      display: inline-block;
+      text-align: left;
+      margin-right: 10px; /* Add some spacing */
+    }
+    /* Address specific styling */
+    .address-value {
+      flex: 1;
+      word-wrap: break-word;
+      word-break: break-word;
+      max-width: calc(100% - 160px); /* Account for label width + margin */
+    }
+    .photos-container {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .photos-row {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .photo-box {
+      width: 120px;
+      height: 150px;
+      border: 1px dashed #aaa;
+      margin: 0 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background-color: #f9f9f9;
+      position: relative;
+    }
+    .photo-box img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    /* Camera elements */
+    .camera-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .camera-preview {
+      width: 640px;
+      height: 480px;
+      background-color: #000;
+      overflow: hidden;
+      position: relative;
+    }
+    .camera-buttons {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+    }
+    .camera-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .capture-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 14px;
+      margin: 5px 2px;
+      cursor: pointer;
+      border-radius: 4px;
     }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
     .items-table th, .items-table td {
       border: 1px solid black;
@@ -55,7 +164,8 @@
     .footer {
       display: flex;
       justify-content: space-between;
-      margin-top: 30px;
+      align-items: center;
+      margin-top: 10px;
     }
     .print-button {
       background-color: #4CAF50;
@@ -74,6 +184,56 @@
       margin-bottom: 20px;
       text-align: left;
     }
+    .view-options {
+      margin: 20px 0;
+      padding: 10px;
+      background-color: #f8f8f8;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .view-options-label {
+      margin-right: 15px;
+      font-weight: bold;
+    }
+    .view-options label {
+      margin-right: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+    .view-options input[type="radio"],
+    .view-options input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    .transaction-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .transaction-table th, .transaction-table td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+    .transaction-table th {
+      background-color: #f2f2f2;
+    }
+    .transaction-header {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: green;
+    }
+    .interest-rate {
+      margin-bottom: 10px;
+    }
+    .signature-line {
+      border-top: 1px solid black;
+      width: 250px;
+      margin-top: 5px;
+    }
     @media print {
       .no-print {
         display: none;
@@ -86,6 +246,9 @@
       .pawn-ticket {
         width: 100%;
         border: none;
+      }
+      .camera-container {
+        display: none !important;
       }
     }
   </style>
@@ -112,75 +275,247 @@
       <p style="color: red;" class="no-print"><%= error %></p>
     <% } %>
 
-    <!-- Display Bill in Pawn Ticket format -->
+    <!-- View Options -->
     <% if (locals.bill) { %>
+      <div class="view-options no-print">
+        <div class="view-options-label">Printing for:</div>
+        <label>
+          <input type="radio" name="viewType" value="normal" checked onchange="changeView('normal')">
+          Normal
+        </label>
+        <label>
+          <input type="radio" name="viewType" value="principal" onchange="changeView('principal')">
+          Principal Addition
+        </label>
+        <label>
+          <input type="radio" name="viewType" value="repay" onchange="changeView('repay')">
+          Repay History
+        </label>
+        <label>
+          <input type="checkbox" id="printWithPhotos" onchange="togglePhotoSection()">
+          Print with Photos
+        </label>
+        <!-- <div style="width: 100%; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;"></div>
+        <label>
+          <input type="checkbox" id="printWithPhotos" onchange="togglePhotoSection()">
+          Print with Photos
+        </label> -->
+      </div>
+
+      <!-- Camera overlay for photo capture -->
+      <div class="camera-container" id="cameraContainer">
+        <div class="camera-preview">
+          <video id="videoElement" autoplay playsinline></video>
+          <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+        <div class="camera-buttons">
+          <button class="camera-button" id="captureButton">Take Photo</button>
+          <button class="camera-button" id="cancelButton">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Display Bill in Pawn Ticket format -->
       <div class="pawn-ticket">
         <!-- Header with Tamil text and contact info -->
         <div class="header">
-          <img src="images\\lakshmi.png" alt="Logo" class="logo">
+          <img src="C:\\express-app\\images\\lakshmi.png" alt="Logo" class="logo">
           <div class="title">
             சாந்தி பான் புரோக்கர்ஸ்<br>
             Pawn Ticket | அடகு சீட்டு
           </div>
           <div class="contact-info">
-            P.B.L.No.<%= bill["Bill Number"] %><br>
-            Phone: <%= bill["Phone Number"] %>
+            P.B.L.No. 03/03-04<br>
+            Phone: 9944339937
           </div>
         </div>
 
-        <!-- Bill Details -->
+        <!-- Bill Details with Photos Section -->
         <div class="bill-details">
-          <div><strong>Pledge No:</strong> <%= bill["Bill Number"] %></div>
-          <div><strong>Date:</strong> <%= bill["Date"] %></div>
-          <div><strong>Name:</strong> <%= bill["Name"] %></div>
-          <div><strong>Address:</strong> <%= bill["Address"] %></div>
-          <div><strong>Loan Amount:</strong> ₹<%= bill["Initial Pledged Amount"] %></div>
+          <div class="bill-details-text">
+            <div><strong>Pledge No:</strong> <%= bill["Bill Number"] %></div>
+            <div><strong>Date:</strong> <%= bill["Date"] %></div>
+            <div><strong>Name:</strong> <%= bill["Name"] %></div>
+            <div><strong>Address:</strong><%= bill["Address"] %></span></div>
+            <div><strong>Loan Amount:</strong> ₹<%= bill["Initial Pledged Amount"] %></div>
+          </div>
+          
+          <!-- Photos Section (Hidden by Default) -->
+          <div class="photos-container" id="photosSection" style="display: none;">
+            <div class="photos-row">
+              <div class="photo-box" id="photo1Container">
+                <img id="photo1" style="display: none;" alt="Photo 1">
+                <span id="photoPlaceholder1">Photo 1</span>
+              </div>
+              <div class="photo-box" id="photo2Container">
+                <img id="photo2" style="display: none;" alt="Photo 2">
+                <span id="photoPlaceholder2">Photo 2</span>
+              </div>
+            </div>
+            <div class="no-print">
+              <button class="capture-button" onclick="openCamera(1)">Capture Photo 1</button>
+              <button class="capture-button" onclick="openCamera(2)">Capture Photo 2</button>
+            </div>
+          </div>
         </div>
 
-        <!-- Items Table -->
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th>Pledge Articles</th>
-              <th>Gross Weight (gms)</th>
-              <th>Value (Rs)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% 
-              let items = {};
-              try {
-                if (bill["Items"] && typeof bill["Items"] === 'string') {
-                  items = JSON.parse(bill["Items"]);
-                }
-              } catch(e) {
-                items = {};
-              }
-              
-              // If no items or not a valid JSON, create a fallback
-              if (Object.keys(items).length === 0) {
-                items = {"Item": "N/A"};
-              }
-              
-              // Display each item
-              Object.entries(items).forEach(([item, weight]) => {
-            %>
+        <!-- Normal View - Items Table -->
+        <div class="normal-view">
+          <table class="items-table">
+            <thead>
               <tr>
-                <td><%= item %></td>
-                <td><%= weight.replace('gms', '') || 'N/A' %></td>
-                <td>N/A</td>
+                <th>Pledge Articles</th>
+                <th>Gross Weight (gms)</th>
+                <th>Value (Rs)</th>
               </tr>
-            <% }); %>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <% 
+                let items = {};
+                try {
+                  if (bill["Items"] && typeof bill["Items"] === 'string') {
+                    items = JSON.parse(bill["Items"]);
+                  }
+                } catch(e) {
+                  items = {};
+                }
+                
+                // If no items or not a valid JSON, create a fallback
+                if (Object.keys(items).length === 0) {
+                  items = {"Item": "N/A"};
+                }
+                
+                // Display each item
+                Object.entries(items).forEach(([item, weight]) => {
+              %>
+                <tr>
+                  <td><%= item %></td>
+                  <td><%= weight.replace('gms', '') || 'N/A' %></td>
+                  <td>N/A</td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
 
-        <!-- Interest Rate -->
-        <div><strong>Interest:</strong> <%= bill["Interest Rate"] %>% per annum</div>
+        <!-- Principal Addition History View -->
+        <div class="principal-view" style="display: none;">
+          <div class="transaction-header">Principal Addition History</div>
+          <table class="transaction-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% 
+                // Process principal addition data
+                let principalData = {};
+                try {
+                  if (bill["Principle_Adding_His"] && typeof bill["Principle_Adding_His"] === 'string') {
+                    principalData = JSON.parse(bill["Principle_Adding_His"]);
+                  }
+                } catch(e) {
+                  principalData = {};
+                }
+                
+                // Convert to array for sorting
+                let principalEntries = Object.entries(principalData);
+                
+                // Sort by date (newest first)
+                principalEntries.sort((a, b) => {
+                  // Convert DD-MM-YYYY to Date objects for comparison
+                  const [dayA, monthA, yearA] = a[0].split('-').map(Number);
+                  const [dayB, monthB, yearB] = b[0].split('-').map(Number);
+                  const dateA = new Date(yearA, monthA - 1, dayA);
+                  const dateB = new Date(yearB, monthB - 1, dayB);
+                  return dateB - dateA;
+                });
+                
+                // Take only last 3 entries
+                principalEntries = principalEntries.slice(0, 3);
+                
+                if (principalEntries.length === 0) {
+              %>
+                <tr>
+                  <td colspan="2">No principal additions found</td>
+                </tr>
+              <% } else { %>
+                <% principalEntries.forEach(([date, amount]) => { %>
+                  <tr>
+                    <td><%= date %></td>
+                    <td>₹<%= amount %></td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
 
-        <!-- Signature Field -->
+        <!-- Repay History View -->
+        <div class="repay-view" style="display: none;">
+          <div class="transaction-header">Repayment History</div>
+          <table class="transaction-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% 
+                // Process repay history data
+                let repayData = {};
+                try {
+                  if (bill["Repay History"] && typeof bill["Repay History"] === 'string') {
+                    repayData = JSON.parse(bill["Repay History"]);
+                  }
+                } catch(e) {
+                  repayData = {};
+                }
+                
+                // Convert to array for sorting
+                let repayEntries = Object.entries(repayData);
+                
+                // Sort by date (newest first)
+                repayEntries.sort((a, b) => {
+                  // Convert DD-MM-YYYY to Date objects for comparison
+                  const [dayA, monthA, yearA] = a[0].split('-').map(Number);
+                  const [dayB, monthB, yearB] = b[0].split('-').map(Number);
+                  const dateA = new Date(yearA, monthA - 1, dayA);
+                  const dateB = new Date(yearB, monthB - 1, dayB);
+                  return dateB - dateA;
+                });
+                
+                // Take only last 3 entries
+                repayEntries = repayEntries.slice(0, 3);
+                
+                if (repayEntries.length === 0) {
+              %>
+                <tr>
+                  <td colspan="2">No repayment history found</td>
+                </tr>
+              <% } else { %>
+                <% repayEntries.forEach(([date, amount]) => { %>
+                  <tr>
+                    <td><%= date %></td>
+                    <td>₹<%= amount %></td>
+                  </tr>
+                <% }); %>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer with Interest Rate and Signature horizontally aligned -->
         <div class="footer">
-          <div></div>
-          <div><strong>Signature:</strong> ____________________________</div>
+          <div class="footer-item interest-rate">
+            <strong>Interest:</strong> <%= bill["Interest Rate"] %>% per annum
+          </div>
+          <div class="footer-item" style="text-align: right;margin-right: 150px;">
+            <strong>User signature</strong>
+            <div class="signature-line"></div>
+          </div>
         </div>
       </div>
       
@@ -188,6 +523,128 @@
       <div class="no-print" style="text-align: center; margin-top: 20px;">
         <button class="print-button" onclick="window.print()">Print Bill</button>
       </div>
+
+      <!-- JavaScript for View Switching and Photo Capture -->
+      <script>
+        // Function to change the view based on radio button selection
+        function changeView(viewType) {
+          // Hide all views first
+          document.querySelectorAll('.normal-view').forEach(el => el.style.display = 'none');
+          document.querySelector('.principal-view').style.display = 'none';
+          document.querySelector('.repay-view').style.display = 'none';
+          
+          // Show selected view
+          if (viewType === 'normal') {
+            document.querySelectorAll('.normal-view').forEach(el => el.style.display = 'block');
+          } else if (viewType === 'principal') {
+            document.querySelector('.principal-view').style.display = 'block';
+          } else if (viewType === 'repay') {
+            document.querySelector('.repay-view').style.display = 'block';
+          }
+        }
+
+        // Function to toggle photo section
+        function togglePhotoSection() {
+          const photoSection = document.getElementById('photosSection');
+          if (document.getElementById('printWithPhotos').checked) {
+            photoSection.style.display = 'flex';
+          } else {
+            photoSection.style.display = 'none';
+          }
+        }
+
+        // Camera variables
+        let currentStream = null;
+        let currentPhotoNumber = null;
+
+        // Function to open camera
+        function openCamera(photoNumber) {
+          currentPhotoNumber = photoNumber;
+          const cameraContainer = document.getElementById('cameraContainer');
+          const videoElement = document.getElementById('videoElement');
+          
+          // Open camera container
+          cameraContainer.style.display = 'flex';
+          
+          // Access device camera
+          navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(function(stream) {
+              videoElement.srcObject = stream;
+              currentStream = stream;
+            })
+            .catch(function(error) {
+              console.error("Could not access the camera: ", error);
+              alert("Camera access failed. Please make sure your camera is connected and you've granted permission.");
+              cameraContainer.style.display = 'none';
+            });
+        }
+
+        // Function to capture the current video frame
+        function captureFrame() {
+          const video = document.getElementById('videoElement');
+          const canvas = document.getElementById('canvas');
+          const context = canvas.getContext('2d');
+          
+          // Set canvas dimensions to match video
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          // Draw the current video frame to the canvas
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          // Convert to data URL (image)
+          return canvas.toDataURL('image/jpeg');
+        }
+
+        // Setup event listeners when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+          const captureButton = document.getElementById('captureButton');
+          const cancelButton = document.getElementById('cancelButton');
+          
+          // Capture button click handler
+          captureButton.addEventListener('click', function() {
+            if (currentStream && currentPhotoNumber) {
+              const imageData = captureFrame();
+              
+              // Update the appropriate photo container
+              const img = document.getElementById('photo' + currentPhotoNumber);
+              const placeholder = document.getElementById('photoPlaceholder' + currentPhotoNumber);
+              
+              img.src = imageData;
+              img.style.display = 'block';
+              placeholder.style.display = 'none';
+              
+              // Close camera
+              closeCamera();
+            }
+          });
+          
+          // Cancel button click handler
+          cancelButton.addEventListener('click', function() {
+            closeCamera();
+          });
+        });
+
+        // Function to close camera and stop stream
+        function closeCamera() {
+          const cameraContainer = document.getElementById('cameraContainer');
+          
+          // Stop all video streams
+          if (currentStream) {
+            currentStream.getTracks().forEach(track => {
+              track.stop();
+            });
+            currentStream = null;
+          }
+          
+          // Hide camera container
+          cameraContainer.style.display = 'none';
+          currentPhotoNumber = null;
+        }
+
+        // Initialize with normal view
+        changeView('normal');
+      </script>
     <% } %>
 
     <!-- Back to Home Button -->

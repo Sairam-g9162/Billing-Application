@@ -20,10 +20,19 @@
 
     <!-- Form -->
     <form action="/add-bill" method="POST" id="billForm">
+      <!-- S Series Toggle Switch -->
+      <div class="toggle-container">
+        <label class="toggle-switch">
+          <input type="checkbox" id="useSeries" name="useSeries">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label"><gradient-wrapper>Use S Series Bill Number</gradient-wrapper></span>
+      </div>
+      
       <!-- Rest of the form fields -->
       <div>
         <label for="billNumber"><gradient-wrapper>Bill Number*</gradient-wrapper></label>
-        <input type="text" id="billNumber" name="billNumber" value="<%= nextBillNumber %>" readonly>
+        <input type="text" id="billNumber" name="billNumber" value="<%= nextBillNumber %>">
       </div>
       <div>
         <label for="name"><gradient-wrapper>Name*</gradient-wrapper></label>
@@ -31,7 +40,7 @@
       </div>
       <div>
         <label for="date"><gradient-wrapper>Date*</gradient-wrapper></label>
-        <input type="date" id="date" name="date" required min="<%= new Date().getFullYear() %>-01-01" max="<%= new Date().toISOString().split('T')[0] %>">
+        <input type="date" id="date" name="date" required  max="<%= new Date().toISOString().split('T')[0] %>">
       </div>
       <div>
         <label for="phoneNumber"><gradient-wrapper>Phone Number*</gradient-wrapper></label>
@@ -85,6 +94,7 @@
     <div class="modal-content">
       <div class="modal-left">
         <h3><gradient-wrapper>Confirm Bill Details</gradient-wrapper></h3>
+        <p><strong>Bill Type:</strong> <span id="confirmBillType"></span></p>
         <p><strong>Bill Number:</strong> <span id="confirmBillNumber"></span></p>
         <p><strong>Name:</strong> <span id="confirmName"></span></p>
         <p><strong>Phone Number:</strong> <span id="confirmPhone"></span></p>
@@ -114,6 +124,23 @@
         // Clear item fields
         document.getElementById('itemFields').innerHTML = '';
     });
+
+    // Add event listener for the S series toggle switch
+    document.getElementById('useSeries').addEventListener('change', function() {
+      // Fetch the appropriate bill number when toggle state changes
+      fetchNextBillNumber(this.checked);
+    });
+
+    function fetchNextBillNumber(useSeries) {
+      fetch(`/get-next-bill-number?useSeries=${useSeries}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('billNumber').value = data.nextBillNumber;
+        })
+        .catch(error => {
+          console.error('Error fetching bill number:', error);
+        });
+    }
 
     function generateItemFields() {
       const noOfItems = parseInt(document.getElementById('noOfItems').value);
@@ -191,6 +218,9 @@
       // Set the hidden field value
       document.getElementById('items').value = JSON.stringify(itemsObj);
 
+      // Set confirmation modal details
+      document.getElementById('confirmBillType').textContent = 
+        form.useSeries.checked ? 'S Series' : 'Standard';
       document.getElementById('confirmBillNumber').textContent = form.billNumber.value;
       document.getElementById('confirmName').textContent = form.name.value;
       document.getElementById('confirmPhone').textContent = form.phoneNumber.value;
@@ -328,6 +358,62 @@
     
     .modal-buttons button:last-child {
       background-color: #f44336;
+    }
+    /* Toggle Switch Styles */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      margin-right: 10px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+      background-color: #2196F3;
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+    
+    .toggle-label {
+      font-weight: 500;
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
     }
     
     #toaster {

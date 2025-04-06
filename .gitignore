@@ -1,3 +1,5 @@
 node_modules/
 images/
 /database/bill_management.db
+/backup
+/package.json

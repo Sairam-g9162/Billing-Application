@@ -1,7 +1,12 @@
 const express = require('express');
 const path = require('path');
-const db = require('./database/db'); // Import the database connection
+const db = require('./database/db');
+const ExcelJS = require('exceljs');
+const fs = require('fs-extra'); // Import the database connection
 const app = express();
+const PDFDocument = require('pdfkit');
+const archiver = require('archiver');
+const moment = require('moment');
 
 
 // Set EJS as the view engine
@@ -19,25 +24,192 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.render('index'); // Home page
 });
+app.get('/backup-interface', (req, res) => {
+  res.render('backup');
+});
 
+// Modified backup endpoint to handle different types of backup
+app.get('/backup', (req, res) => {
+  const backupType = req.query.type || 'today';
+  const customDate = req.query.date;
+  
+  let date;
+  if (backupType === 'custom' && customDate) {
+    date = customDate;
+  } else {
+    date = new Date().toISOString().split('T')[0];
+  }
+
+  // Define backup directories
+  const backupDir = path.join(__dirname, 'backup');
+  const activeDir = path.join(backupDir, 'active');
+  const releasedDir = path.join(backupDir, 'released');
+  
+  // Ensure directories exist
+  fs.ensureDirSync(backupDir);
+  fs.ensureDirSync(activeDir);
+  fs.ensureDirSync(path.join(activeDir, 'active_pledges'));
+  fs.ensureDirSync(path.join(activeDir, 'S_active_pledges'));
+  fs.ensureDirSync(releasedDir);
+  fs.ensureDirSync(path.join(releasedDir, 'released_pledges'));
+  fs.ensureDirSync(path.join(releasedDir, 'S_released_pledges'));
+
+  try {
+    if (backupType === 'complete') {
+      // Complete data backup - fetch all data from all tables
+      Promise.all([
+        createBackup('active_pledges', null, 'complete_data_active_pledges', activeDir),
+        createBackup('S_active_pledges', null, 'complete_data_S_active_pledges', activeDir),
+        createBackup('released_pledges', null, 'complete_data_released_pledges', releasedDir),
+        createBackup('S_released_pledges', null, 'complete_data_S_released_pledges', releasedDir)
+      ])
+      .then(() => {
+        res.status(200).send('Complete backup completed successfully!');
+      })
+      .catch(error => {
+        console.error('Error during complete backup:', error);
+        res.status(500).send('Error creating complete backup files.');
+      });
+    } else {
+      // Today's or custom date backup
+      const filePrefix = date;
+      
+      Promise.all([
+        createBackup('active_pledges', date, `${filePrefix}_active_pledges`, activeDir),
+        createBackup('S_active_pledges', date, `${filePrefix}_S_active_pledges`, activeDir),
+        createBackup('released_pledges', date, `${filePrefix}_released_pledges`, releasedDir),
+        createBackup('S_released_pledges', date, `${filePrefix}_S_released_pledges`, releasedDir)
+      ])
+      .then(() => {
+        res.status(200).send(`Backup for ${date} completed successfully!`);
+      })
+      .catch(error => {
+        console.error(`Error during ${date} backup:`, error);
+        res.status(500).send(`Error creating backup files for ${date}.`);
+      });
+    }
+  } catch (err) {
+    console.error('Error processing backup:', err);
+    res.status(500).send('Error processing backup request.');
+  }
+});
+
+// Helper function to create backup for a specific table
+function createBackup(tableName, date, fileName, directory) {
+  return new Promise((resolve, reject) => {
+    let query;
+    let params = [];
+    
+    if (date) {
+      query = `SELECT * FROM ${tableName} WHERE date = ?`;
+      params = [date];
+    } else {
+      query = `SELECT * FROM ${tableName}`;
+    }
+    
+    db.all(query, params, (err, data) => {
+      if (err) {
+        console.error(`Error fetching data from ${tableName}:`, err.message);
+        return reject(err);
+      }
+      
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet(tableName);
+      
+      // Add data to worksheet
+      if (data.length > 0) {
+        sheet.columns = Object.keys(data[0]).map(key => ({ header: key, key }));
+        data.forEach(row => sheet.addRow(row));
+      } else {
+        sheet.addRow({ message: `No data available for ${tableName}${date ? ' on ' + date : ''}.` });
+      }
+      
+      // Sub-directory for table type
+      const tableDir = path.join(directory, tableName);
+      fs.ensureDirSync(tableDir);
+      
+      const filePath = path.join(tableDir, `${fileName}.xlsx`);
+      
+      workbook.xlsx.writeFile(filePath)
+        .then(() => {
+          console.log(`Backup successful for ${tableName} to ${filePath}`);
+          resolve();
+        })
+        .catch(writeError => {
+          console.error(`Error writing Excel file for ${tableName}:`, writeError.message);
+          reject(writeError);
+        });
+    });
+  });
+}
 // GET: Render the Add Bill form
-app.get('/add-bill', (req, res) => {
-  // Query the database for the latest bill number from both tables
-  const query = `
-    SELECT "Bill Number" as billNumber FROM (
-      SELECT "Bill Number" FROM active_pledges
-      UNION
-      SELECT "Bill Number" FROM released_pledges
-    ) ORDER BY billNumber DESC LIMIT 1
-  `;
+// Add a new endpoint to get the next bill number based on series type
+app.get('/get-next-bill-number', (req, res) => {
+  const useSeries = req.query.useSeries === 'true';
+  
+  // Get next bill number based on series type
+  getNextBillNumber(useSeries, (nextBillNumber) => {
+    res.json({ nextBillNumber });
+  });
+});
+
+// Function to get the next bill number
+function getNextBillNumber(useSeries, callback) {
+  let query;
+  
+  if (useSeries) {
+    // Query for S series bill numbers
+    query = `
+      SELECT "Bill Number" as billNumber FROM (
+        SELECT "Bill Number" FROM S_active_pledges
+        UNION
+        SELECT "Bill Number" FROM S_released_pledges
+      ) WHERE "Bill Number" LIKE 'S%' ORDER BY billNumber DESC LIMIT 1
+    `;
+  } else {
+    // Query for standard bill numbers
+    query = `
+      SELECT "Bill Number" as billNumber FROM (
+        SELECT "Bill Number" FROM active_pledges
+        UNION
+        SELECT "Bill Number" FROM released_pledges
+      ) WHERE "Bill Number" NOT LIKE 'S%' ORDER BY billNumber DESC LIMIT 1
+    `;
+  }
   
   db.get(query, [], (err, result) => {
-    let nextBillNumber = 'A0001'; // Default starting value
+    let nextBillNumber;
     
-    if (!err && result) {
-      // Extract the letter and number parts
-      const lastBill = result.billNumber || '';
-      if (lastBill.length > 0) {
+    if (useSeries) {
+      // Handle S series bill number generation
+      nextBillNumber = 'SA0001'; // Default starting value for S series
+      
+      if (!err && result && result.billNumber) {
+        const lastBill = result.billNumber;
+        // Remove the 'S' prefix to process the letter and number parts
+        const seriesLetter = lastBill.charAt(1);
+        const number = parseInt(lastBill.substring(2));
+        
+        if (!isNaN(number)) {
+          if (number < 9999) {
+            // Increment the number
+            const newNumber = number + 1;
+            nextBillNumber = 'S' + seriesLetter + newNumber.toString().padStart(4, '0');
+          } else {
+            // Move to the next letter
+            const nextLetter = String.fromCharCode(seriesLetter.charCodeAt(0) + 1);
+            if (nextLetter <= 'Z') {
+              nextBillNumber = 'S' + nextLetter + '0001';
+            }
+          }
+        }
+      }
+    } else {
+      // Standard bill number generation
+      nextBillNumber = 'A0001'; // Default starting value
+      
+      if (!err && result && result.billNumber) {
+        const lastBill = result.billNumber;
         const letter = lastBill.charAt(0);
         const number = parseInt(lastBill.substring(1));
         
@@ -57,6 +229,13 @@ app.get('/add-bill', (req, res) => {
       }
     }
     
+    callback(nextBillNumber);
+  });
+}
+
+// Update the GET route to use the new function
+app.get('/add-bill', (req, res) => {
+  getNextBillNumber(false, (nextBillNumber) => {
     res.render('addBill', { 
       error: null, 
       success: null,
@@ -65,14 +244,12 @@ app.get('/add-bill', (req, res) => {
   });
 });
 
-// POST: Handle form submission for Add Bill
-// POST: Handle form submission for Add Bill
-// Modify your app.post('/add-bill') handler:
+// Update the POST route to handle both tables
 app.post('/add-bill', (req, res) => {
   const {
     billNumber, name, date, phoneNumber, address, aadharNumber,
     goldSilver, noOfItems, items, remarks, interestRate, initialPledgedAmount,
-    principleAddingHis, repayHistory
+    principleAddingHis, repayHistory, useSeries
   } = req.body;
   
   try {
@@ -88,9 +265,12 @@ app.post('/add-bill', (req, res) => {
       repayHistory || JSON.stringify({})
     ];
     
-    // Insert into active_pledges
+    // Determine which table to use based on the checkbox
+    const tableName = useSeries === 'on' ? 'S_active_pledges' : 'active_pledges';
+    
+    // Insert into the appropriate table
     db.run(`
-      INSERT INTO active_pledges (
+      INSERT INTO ${tableName} (
         "Bill Number", "Name", "Date", "Phone Number", "Address", 
         "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
         "Remarks", "Interest Rate", "Initial Pledged Amount", 
@@ -98,15 +278,15 @@ app.post('/add-bill', (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, data, (err) => {
       if (err) {
-        console.error('Error inserting into active_pledges:', err.message);
+        console.error(`Error inserting into ${tableName}:`, err.message);
         res.render('addBill', { 
           error: 'Error adding bill: ' + err.message, 
           success: null,
           nextBillNumber: billNumber 
         });
       } else {
-        // Redirect to print-bill page with the bill number
-        res.redirect(`/print-bill?billNumber=${billNumber}`);
+        // Redirect to print-bill page with the bill number and table info
+        res.redirect(`/print-bill?billNumber=${billNumber}&tableName=${tableName}`);
       }
     });
   } catch (error) {
@@ -132,25 +312,44 @@ app.get('/principal-addition', (req, res) => {
     });
   }
 
-  // If bill number is provided, query the database
+  // If bill number is provided, query the database - now including silver tables
+  // Using LIKE with % to handle potential prefix/suffix inconsistencies
   const query = `
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
            "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
     FROM active_pledges 
-    WHERE "Bill Number" = ?
+    WHERE "Bill Number" LIKE ?
     UNION
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
            "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
     FROM released_pledges 
-    WHERE "Bill Number" = ?
+    WHERE "Bill Number" LIKE ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
+    FROM S_active_pledges 
+    WHERE "Bill Number" LIKE ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
+    FROM S_released_pledges 
+    WHERE "Bill Number" LIKE ?
   `;
   
-  db.get(query, [billNumber, billNumber], (err, bill) => {
+  // Search with flexibility for bill number format
+  const searchPattern = `%${billNumber}%`;
+  
+  db.get(query, [searchPattern, searchPattern, searchPattern, searchPattern], (err, bill) => {
     if (err) {
+      console.error("Database error:", err);
       return res.render('principalAddition', { 
         bill: null, 
         error: 'Error fetching bill: ' + err.message,
@@ -159,6 +358,7 @@ app.get('/principal-addition', (req, res) => {
     } 
     
     if (!bill) {
+      console.log(`Bill not found: ${billNumber}`);
       return res.render('principalAddition', { 
         bill: null, 
         error: 'Bill not found',
@@ -167,6 +367,7 @@ app.get('/principal-addition', (req, res) => {
     } 
     
     // Successfully found the bill
+    // console.log(`Found bill: ${bill["Bill Number"]}`);
     res.render('principalAddition', { 
       bill, 
       error: null,
@@ -183,23 +384,33 @@ app.post('/add-principal', express.json(), (req, res) => {
     return res.json({ success: false, error: 'Missing required fields' });
   }
   
-  // First, get the current bill details
+  // First, get the current bill details - now including silver tables
   const query = `
-    SELECT "Bill Number", "Principle_Adding_His", "Status"
+    SELECT "Bill Number", "Principle_Adding_His", "Gold/Silver" as "Type", 'active_pledges' as "Table", 'Active' as "Status"
     FROM active_pledges 
     WHERE "Bill Number" = ?
     UNION
-    SELECT "Bill Number", "Principle_Adding_His", 'Released' as "Status"
+    SELECT "Bill Number", "Principle_Adding_His", "Gold/Silver" as "Type", 'released_pledges' as "Table", 'Released' as "Status"
     FROM released_pledges 
+    WHERE "Bill Number" = ?
+    UNION
+    SELECT "Bill Number", "Principle_Adding_His", "Gold/Silver" as "Type", 'S_active_pledges' as "Table", 'Active' as "Status"
+    FROM S_active_pledges 
+    WHERE "Bill Number" = ?
+    UNION
+    SELECT "Bill Number", "Principle_Adding_His", "Gold/Silver" as "Type", 'S_released_pledges' as "Table", 'Released' as "Status"
+    FROM S_released_pledges 
     WHERE "Bill Number" = ?
   `;
   
-  db.get(query, [billNumber, billNumber], (err, bill) => {
+  db.get(query, [billNumber, billNumber, billNumber, billNumber], (err, bill) => {
     if (err) {
+      console.error("Database error during principal addition:", err);
       return res.json({ success: false, error: 'Database error: ' + err.message });
     }
     
     if (!bill) {
+      // console.log(`Bill not found for principal addition: ${billNumber}`);
       return res.json({ success: false, error: 'Bill not found' });
     }
     
@@ -215,6 +426,7 @@ app.post('/add-principal', express.json(), (req, res) => {
         principalHistory = JSON.parse(bill.Principle_Adding_His);
       } catch(e) {
         // If invalid JSON, start with empty object
+        console.error("Error parsing principal history:", e);
         principalHistory = {};
       }
     }
@@ -225,19 +437,27 @@ app.post('/add-principal', express.json(), (req, res) => {
     // Convert back to JSON string
     const updatedPrincipalHistory = JSON.stringify(principalHistory);
     
-    // Update the database
+    // Determine which table to update based on the Table field
+    const tableToUpdate = bill.Table;
+    
+    console.log(`Updating principal for bill ${billNumber} in table ${tableToUpdate}`);
+    
+    // Update the database in the appropriate table
     db.run(
-      'UPDATE active_pledges SET "Principle_Adding_His" = ? WHERE "Bill Number" = ?',
+      `UPDATE ${tableToUpdate} SET "Principle_Adding_His" = ? WHERE "Bill Number" = ?`,
       [updatedPrincipalHistory, billNumber],
       function(updateErr) {
         if (updateErr) {
+          console.error("Error updating principal:", updateErr);
           return res.json({ success: false, error: 'Update error: ' + updateErr.message });
         }
         
         if (this.changes === 0) {
+          console.log("No records updated for principal addition");
           return res.json({ success: false, error: 'No records updated' });
         }
         
+        console.log(`Successfully added principal for bill ${billNumber}`);
         return res.json({ success: true });
       }
     );
@@ -257,25 +477,44 @@ app.get('/repayment', (req, res) => {
     });
   }
 
-  // If bill number is provided, query the database
+  // If bill number is provided, query the database - now including silver tables
+  // Using LIKE with % to handle potential prefix/suffix inconsistencies
   const query = `
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
            "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
     FROM active_pledges 
-    WHERE "Bill Number" = ?
+    WHERE "Bill Number" LIKE ?
     UNION
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
            "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
     FROM released_pledges 
-    WHERE "Bill Number" = ?
+    WHERE "Bill Number" LIKE ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
+    FROM S_active_pledges 
+    WHERE "Bill Number" LIKE ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
+    FROM S_released_pledges 
+    WHERE "Bill Number" LIKE ?
   `;
   
-  db.get(query, [billNumber, billNumber], (err, bill) => {
+  // Search with flexibility for bill number format
+  const searchPattern = `%${billNumber}%`;
+  
+  db.get(query, [searchPattern, searchPattern, searchPattern, searchPattern], (err, bill) => {
     if (err) {
+      console.error("Database error:", err);
       return res.render('repayment', { 
         bill: null, 
         error: 'Error fetching bill: ' + err.message,
@@ -284,6 +523,7 @@ app.get('/repayment', (req, res) => {
     } 
     
     if (!bill) {
+      console.log(`Bill not found: ${billNumber}`);
       return res.render('repayment', { 
         bill: null, 
         error: 'Bill not found',
@@ -292,6 +532,7 @@ app.get('/repayment', (req, res) => {
     } 
     
     // Successfully found the bill
+    // console.log(`Found bill for repayment: ${bill["Bill Number"]}`);
     res.render('repayment', { 
       bill, 
       error: null,
@@ -308,23 +549,33 @@ app.post('/add-repayment', express.json(), (req, res) => {
     return res.json({ success: false, error: 'Missing required fields' });
   }
   
-  // First, get the current bill details
+  // First, get the current bill details - now including silver tables
   const query = `
-    SELECT "Bill Number", "Repay History", "Status"
+    SELECT "Bill Number", "Repay History", "Gold/Silver" as "Type", 'active_pledges' as "Table", 'Active' as "Status"
     FROM active_pledges 
     WHERE "Bill Number" = ?
     UNION
-    SELECT "Bill Number", "Repay History", 'Released' as "Status"
+    SELECT "Bill Number", "Repay History", "Gold/Silver" as "Type", 'released_pledges' as "Table", 'Released' as "Status"
     FROM released_pledges 
+    WHERE "Bill Number" = ?
+    UNION
+    SELECT "Bill Number", "Repay History", "Gold/Silver" as "Type", 'S_active_pledges' as "Table", 'Active' as "Status"
+    FROM S_active_pledges 
+    WHERE "Bill Number" = ?
+    UNION
+    SELECT "Bill Number", "Repay History", "Gold/Silver" as "Type", 'S_released_pledges' as "Table", 'Released' as "Status"
+    FROM S_released_pledges 
     WHERE "Bill Number" = ?
   `;
   
-  db.get(query, [billNumber, billNumber], (err, bill) => {
+  db.get(query, [billNumber, billNumber, billNumber, billNumber], (err, bill) => {
     if (err) {
+      console.error("Database error during repayment:", err);
       return res.json({ success: false, error: 'Database error: ' + err.message });
     }
     
     if (!bill) {
+      // console.log(`Bill not found for repayment: ${billNumber}`);
       return res.json({ success: false, error: 'Bill not found' });
     }
     
@@ -340,6 +591,7 @@ app.post('/add-repayment', express.json(), (req, res) => {
         repaymentHistory = JSON.parse(bill["Repay History"]);
       } catch(e) {
         // If invalid JSON, start with empty object
+        console.error("Error parsing repayment history:", e);
         repaymentHistory = {};
       }
     }
@@ -350,19 +602,27 @@ app.post('/add-repayment', express.json(), (req, res) => {
     // Convert back to JSON string
     const updatedRepaymentHistory = JSON.stringify(repaymentHistory);
     
-    // Update the database
+    // Determine which table to update based on the Table field
+    const tableToUpdate = bill.Table;
+    
+    console.log(`Updating repayment for bill ${billNumber} in table ${tableToUpdate}`);
+    
+    // Update the database in the appropriate table
     db.run(
-      'UPDATE active_pledges SET "Repay History" = ? WHERE "Bill Number" = ?',
+      `UPDATE ${tableToUpdate} SET "Repay History" = ? WHERE "Bill Number" = ?`,
       [updatedRepaymentHistory, billNumber],
       function(updateErr) {
         if (updateErr) {
+          console.error("Error updating repayment:", updateErr);
           return res.json({ success: false, error: 'Update error: ' + updateErr.message });
         }
         
         if (this.changes === 0) {
+          console.log("No records updated for repayment");
           return res.json({ success: false, error: 'No records updated' });
         }
         
+        console.log(`Successfully added repayment for bill ${billNumber}`);
         return res.json({ success: true });
       }
     );
@@ -370,88 +630,65 @@ app.post('/add-repayment', express.json(), (req, res) => {
 });
 
 // GET: Release page
-app.get('/release', (req, res) => {
-  const billNumber = req.query.billNumber;
-  if (!billNumber) {
-    return res.render('release', { bill: null, error: null,searchBillNumber: ''  });
-  }
 
-  const query = `
-    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-           "Remarks", "Interest Rate", "Initial Pledged Amount", 
-           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
-    FROM active_pledges 
-    WHERE "Bill Number" = ?
-    UNION
-    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-           "Remarks", "Interest Rate", "Initial Pledged Amount", 
-           "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
-    FROM released_pledges 
-    WHERE "Bill Number" = ?
-  `;
-  db.get(query, [billNumber, billNumber], (err, bill) => {
-    if (err) {
-      res.render('release', { bill: null, error: 'Error fetching bill: ' + err.message });
-    } else if (!bill) {
-      res.render('release', { bill: null, error: 'Bill not found' });
-    } else {
-      res.render('release', { bill, error: null });
-    }
-  });
-});
 app.get('/print-bill', (req, res) => {
   const billNumber = req.query.billNumber;
   
   // If no bill number provided, just render the search form
   if (!billNumber) {
-    return res.render('printBill', { 
-      bill: null, 
-      error: null, 
-      searchBillNumber: '' 
+    return res.render('printBill', {
+      bill: null,
+      error: null,
+      searchBillNumber: ''
     });
   }
-
+  
   // If bill number is provided, query the database
   const query = `
-    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address",
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items",
+           "Remarks", "Interest Rate", "Initial Pledged Amount",
            "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
     FROM active_pledges 
     WHERE "Bill Number" = ?
     UNION
-    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
-           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address",
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items",
+           "Remarks", "Interest Rate", "Initial Pledged Amount",
+           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'S_Active' as "Status"
+    FROM S_active_pledges 
+    WHERE "Bill Number" = ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address",
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items",
+           "Remarks", "Interest Rate", "Initial Pledged Amount",
            "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
     FROM released_pledges 
     WHERE "Bill Number" = ?
   `;
   
-  db.get(query, [billNumber, billNumber], (err, bill) => {
+  db.get(query, [billNumber, billNumber, billNumber], (err, bill) => {
     if (err) {
-      return res.render('printBill', { 
-        bill: null, 
+      return res.render('printBill', {
+        bill: null,
         error: 'Error fetching bill: ' + err.message,
-        searchBillNumber: billNumber 
+        searchBillNumber: billNumber
       });
-    } 
+    }
     
     if (!bill) {
-      return res.render('printBill', { 
-        bill: null, 
+      return res.render('printBill', {
+        bill: null,
         error: 'Bill not found',
-        searchBillNumber: billNumber 
+        searchBillNumber: billNumber
       });
-    } 
+    }
     
     // Successfully found the bill
-    res.render('printBill', { 
-      bill, 
+    res.render('printBill', {
+      bill,
       error: null,
-      searchBillNumber: billNumber 
+      searchBillNumber: billNumber
     });
   });
 });
@@ -477,7 +714,7 @@ app.post('/find-bill', (req, res) => {
     additionalEndDate
   } = req.body;
 
-  // Base query parts
+  // Base query parts for gold
   const activeBaseSelect = `
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number" as "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
@@ -496,6 +733,25 @@ app.post('/find-bill', (req, res) => {
     FROM released_pledges
   `;
 
+  // Base query parts for silver
+  const SActiveBaseSelect = `
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number" as "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His" as "Principle_Adding_His", "Repay History" as "Repay History", 
+           NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
+    FROM S_active_pledges
+  `;
+  
+  const SReleasedBaseSelect = `
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number" as "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His" as "Principle_Adding_His", "Repay History" as "Repay History", 
+           "Released Date", "Released Remarks", 'Released' as "Status"
+    FROM S_released_pledges
+  `;
+
   let activeWhereClause = '';
   let releasedWhereClause = '';
   let params = [];
@@ -504,22 +760,22 @@ app.post('/find-bill', (req, res) => {
   if (searchBy === 'mobile') {
     activeWhereClause = `WHERE "Phone Number" = ?`;
     releasedWhereClause = `WHERE "Phone Number" = ?`;
-    params.push(searchValue, searchValue);
+    params.push(searchValue, searchValue, searchValue, searchValue);
   } 
   else if (searchBy === 'aadhar') {
     activeWhereClause = `WHERE "Aadhar_Number" = ?`;
     releasedWhereClause = `WHERE "Aadhar_Number" = ?`;
-    params.push(searchValue, searchValue);
+    params.push(searchValue, searchValue, searchValue, searchValue);
   } 
   else if (searchBy === 'bill') {
     activeWhereClause = `WHERE "Bill Number" = ?`;
     releasedWhereClause = `WHERE "Bill Number" = ?`;
-    params.push(searchValue, searchValue);
+    params.push(searchValue, searchValue, searchValue, searchValue);
   }
   else if (searchBy === 'name') {
     activeWhereClause = `WHERE "Name" LIKE ?`;
     releasedWhereClause = `WHERE "Name" LIKE ?`;
-    params.push(`%${searchValue}%`, `%${searchValue}%`);
+    params.push(`%${searchValue}%`, `%${searchValue}%`, `%${searchValue}%`, `%${searchValue}%`);
   }
   else if (searchBy === 'date') {
     if (!startDate || !endDate) {
@@ -527,7 +783,7 @@ app.post('/find-bill', (req, res) => {
     }
     activeWhereClause = `WHERE "Date" BETWEEN ? AND ?`;
     releasedWhereClause = `WHERE "Date" BETWEEN ? AND ?`;
-    params.push(startDate, endDate, startDate, endDate);
+    params.push(startDate, endDate, startDate, endDate, startDate, endDate, startDate, endDate);
   } else {
     return res.render('findBill', { results: [], error: 'Invalid search criteria' });
   }
@@ -537,17 +793,17 @@ app.post('/find-bill', (req, res) => {
     if (additionalSearchBy === 'mobile') {
       activeWhereClause += ` AND "Phone Number" = ?`;
       releasedWhereClause += ` AND "Phone Number" = ?`;
-      params.push(additionalSearchValue, additionalSearchValue);
+      params.push(additionalSearchValue, additionalSearchValue, additionalSearchValue, additionalSearchValue);
     } 
     else if (additionalSearchBy === 'aadhar') {
       activeWhereClause += ` AND "Aadhar_Number" = ?`;
       releasedWhereClause += ` AND "Aadhar_Number" = ?`;
-      params.push(additionalSearchValue, additionalSearchValue);
+      params.push(additionalSearchValue, additionalSearchValue, additionalSearchValue, additionalSearchValue);
     }
     else if (additionalSearchBy === 'name') {
       activeWhereClause += ` AND "Name" LIKE ?`;
       releasedWhereClause += ` AND "Name" LIKE ?`;
-      params.push(`%${additionalSearchValue}%`, `%${additionalSearchValue}%`);
+      params.push(`%${additionalSearchValue}%`, `%${additionalSearchValue}%`, `%${additionalSearchValue}%`, `%${additionalSearchValue}%`);
     }
     else if (additionalSearchBy === 'date') {
       if (!additionalStartDate || !additionalEndDate) {
@@ -555,7 +811,7 @@ app.post('/find-bill', (req, res) => {
       }
       activeWhereClause += ` AND "Date" BETWEEN ? AND ?`;
       releasedWhereClause += ` AND "Date" BETWEEN ? AND ?`;
-      params.push(additionalStartDate, additionalEndDate, additionalStartDate, additionalEndDate);
+      params.push(additionalStartDate, additionalEndDate, additionalStartDate, additionalEndDate, additionalStartDate, additionalEndDate, additionalStartDate, additionalEndDate);
     }
   }
 
@@ -565,6 +821,12 @@ app.post('/find-bill', (req, res) => {
     ${activeWhereClause}
     UNION
     ${releasedBaseSelect}
+    ${releasedWhereClause}
+    UNION
+    ${SActiveBaseSelect}
+    ${activeWhereClause}
+    UNION
+    ${SReleasedBaseSelect}
     ${releasedWhereClause}
   `;
 
@@ -614,24 +876,44 @@ app.get('/release', (req, res) => {
     });
   }
 
-  // If bill number is provided, query the database
+  // If bill number is provided, query all four tables
   const query = `
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
-           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status"
+           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status", 'Regular' as "Type"
     FROM active_pledges 
     WHERE "Bill Number" = ?
+    
     UNION
+    
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
-           "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status"
+           "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status", 'Regular' as "Type"
     FROM released_pledges 
+    WHERE "Bill Number" = ?
+    
+    UNION
+    
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", NULL as "Released Date", NULL as "Released Remarks", 'Active' as "Status", 'Special' as "Type"
+    FROM S_active_pledges 
+    WHERE "Bill Number" = ?
+    
+    UNION
+    
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks", 'Released' as "Status", 'Special' as "Type"
+    FROM S_released_pledges 
     WHERE "Bill Number" = ?
   `;
   
-  db.get(query, [billNumber, billNumber], (err, bill) => {
+  db.get(query, [billNumber, billNumber, billNumber, billNumber], (err, bill) => {
     if (err) {
       return res.render('release', { 
         bill: null, 
@@ -658,6 +940,7 @@ app.get('/release', (req, res) => {
 });
 
 // POST route to handle bill release
+// POST route to handle bill release
 app.post('/release-bill', (req, res) => {
   const { billNumber, remarks } = req.body;
   
@@ -669,75 +952,98 @@ app.post('/release-bill', (req, res) => {
   db.serialize(() => {
     db.run('BEGIN TRANSACTION');
     
-    // Get the bill from active_pledges
-    db.get('SELECT * FROM active_pledges WHERE "Bill Number" = ?', [billNumber], (err, bill) => {
+    // First check active_pledges
+    db.get('SELECT *, "Regular" as "Type" FROM active_pledges WHERE "Bill Number" = ?', [billNumber], (err, bill) => {
       if (err) {
         db.run('ROLLBACK');
         return res.redirect('/release?billNumber=' + billNumber + '&error=' + encodeURIComponent('Database error: ' + err.message));
       }
       
+      // If not found in active_pledges, check S_active_pledges
       if (!bill) {
-        db.run('ROLLBACK');
-        return res.redirect('/release?billNumber=' + billNumber + '&error=Bill not found or already released');
-      }
-      
-      // Current date for the released_date field
-      const releasedDate = new Date().toISOString().split('T')[0];
-      
-      // Insert into released_pledges
-      const insertQuery = `
-        INSERT INTO released_pledges (
-          "Bill Number", "Name", "Date", "Phone Number", "Address", 
-          "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
-          "Remarks", "Interest Rate", "Initial Pledged Amount", 
-          "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks"
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      
-      db.run(insertQuery, [
-        bill["Bill Number"], 
-        bill["Name"], 
-        bill["Date"], 
-        bill["Phone Number"], 
-        bill["Address"], 
-        bill["Aadhar_Number"], 
-        bill["Gold/Silver"], 
-        bill["No_of_items"], 
-        bill["Items"], 
-        bill["Remarks"], 
-        bill["Interest Rate"], 
-        bill["Initial Pledged Amount"], 
-        bill["Principle_Adding_His"], 
-        bill["Repay History"], 
-        releasedDate, 
-        remarks
-      ], function(insertErr) {
-        if (insertErr) {
-          db.run('ROLLBACK');
-          return res.redirect('/release?billNumber=' + billNumber + '&error=' + encodeURIComponent('Error inserting into released_pledges: ' + insertErr.message));
-        }
-        
-        // Delete from active_pledges
-        db.run('DELETE FROM active_pledges WHERE "Bill Number" = ?', [billNumber], function(deleteErr) {
-          if (deleteErr) {
+        db.get('SELECT *, "Special" as "Type" FROM S_active_pledges WHERE "Bill Number" = ?', [billNumber], (err, specialBill) => {
+          if (err) {
             db.run('ROLLBACK');
-            return res.redirect('/release?billNumber=' + billNumber + '&error=' + encodeURIComponent('Error deleting from active_pledges: ' + deleteErr.message));
+            return res.redirect('/release?billNumber=' + billNumber + '&error=' + encodeURIComponent('Database error: ' + err.message));
           }
           
-          // Commit the transaction if everything was successful
-          db.run('COMMIT', function(commitErr) {
-            if (commitErr) {
-              db.run('ROLLBACK');
-              return res.redirect('/release?billNumber=' + billNumber + '&error=' + encodeURIComponent('Error committing transaction: ' + commitErr.message));
-            }
-            
-            // Redirect to release page with success message
-            return res.redirect('/release?billNumber=' + billNumber + '&success=Bill successfully released');
-          });
+          if (!specialBill) {
+            db.run('ROLLBACK');
+            return res.redirect('/release?billNumber=' + billNumber + '&error=Bill not found or already released');
+          }
+          
+          // Process the special bill
+          processRelease(specialBill, remarks, true, res);
+        });
+      } else {
+        // Process the regular bill
+        processRelease(bill, remarks, false, res);
+      }
+    });
+  });
+  
+  // Helper function to process the release
+  function processRelease(bill, remarks, isSpecial, res) {
+    // Current date for the released_date field
+    const releasedDate = new Date().toISOString().split('T')[0];
+    
+    // Determine which tables to use based on isSpecial flag
+    const activeTable = isSpecial ? 'S_active_pledges' : 'active_pledges';
+    const releasedTable = isSpecial ? 'S_released_pledges' : 'released_pledges';
+    
+    // Insert into released_pledges or S_released_pledges
+    const insertQuery = `
+      INSERT INTO ${releasedTable} (
+        "Bill Number", "Name", "Date", "Phone Number", "Address", 
+        "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+        "Remarks", "Interest Rate", "Initial Pledged Amount", 
+        "Principle_Adding_His", "Repay History", "Released Date", "Released Remarks"
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    db.run(insertQuery, [
+      bill["Bill Number"], 
+      bill["Name"], 
+      bill["Date"], 
+      bill["Phone Number"], 
+      bill["Address"], 
+      bill["Aadhar_Number"], 
+      bill["Gold/Silver"], 
+      bill["No_of_items"], 
+      bill["Items"], 
+      bill["Remarks"], 
+      bill["Interest Rate"], 
+      bill["Initial Pledged Amount"], 
+      bill["Principle_Adding_His"], 
+      bill["Repay History"], 
+      releasedDate, 
+      remarks
+    ], function(insertErr) {
+      if (insertErr) {
+        db.run('ROLLBACK');
+        return res.redirect('/release?billNumber=' + bill["Bill Number"] + '&error=' + encodeURIComponent(`Error inserting into ${releasedTable}: ` + insertErr.message));
+      }
+      
+      // Delete from active_pledges or S_active_pledges
+      db.run(`DELETE FROM ${activeTable} WHERE "Bill Number" = ?`, [bill["Bill Number"]], function(deleteErr) {
+        if (deleteErr) {
+          db.run('ROLLBACK');
+          return res.redirect('/release?billNumber=' + bill["Bill Number"] + '&error=' + encodeURIComponent(`Error deleting from ${activeTable}: ` + deleteErr.message));
+        }
+        
+        // Commit the transaction if everything was successful
+        db.run('COMMIT', function(commitErr) {
+          if (commitErr) {
+            db.run('ROLLBACK');
+            return res.redirect('/release?billNumber=' + bill["Bill Number"] + '&error=' + encodeURIComponent('Error committing transaction: ' + commitErr.message));
+          }
+          
+          // Redirect to release page with success message
+          return res.redirect('/release?billNumber=' + bill["Bill Number"] + '&success=Bill successfully released');
         });
       });
     });
-  });
+  }
 });
 
 
@@ -756,18 +1062,30 @@ app.get('/calculate-interest', (req, res) => {
     });
   }
 
-  // If bill number is provided, query the database
+  // If bill number is provided, query the database - now including silver tables
+  // Using LIKE with % to handle potential prefix/suffix inconsistencies
   const query = `
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
            "Principle_Adding_His", "Repay History"
     FROM active_pledges 
-    WHERE "Bill Number" = ?
+    WHERE "Bill Number" LIKE ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History"
+    FROM S_active_pledges 
+    WHERE "Bill Number" LIKE ?
   `;
   
-  db.get(query, [billNumber], (err, bill) => {
+  // Search with flexibility for bill number format
+  const searchPattern = `%${billNumber}%`;
+  
+  db.get(query, [searchPattern, searchPattern], (err, bill) => {
     if (err) {
+      console.error("Database error:", err);
       return res.render('calculate-interest', { 
         bill: null, 
         error: 'Error fetching bill: ' + err.message,
@@ -777,6 +1095,7 @@ app.get('/calculate-interest', (req, res) => {
     } 
     
     if (!bill) {
+      console.log(`Bill not found: ${billNumber}`);
       return res.render('calculate-interest', { 
         bill: null, 
         error: 'Bill not found',
@@ -799,6 +1118,7 @@ app.get('/calculate-interest', (req, res) => {
         bill["Repay History"] = {};
       }
     } catch (e) {
+      console.error("Error parsing bill data:", e);
       return res.render('calculate-interest', { 
         bill: null, 
         error: 'Error parsing bill data: ' + e.message,
@@ -808,6 +1128,7 @@ app.get('/calculate-interest', (req, res) => {
     }
     
     // Successfully found the bill
+    // console.log(`Found bill for interest calculation: ${bill["Bill Number"]}`);
     res.render('calculate-interest', { 
       bill, 
       error: null,
@@ -826,18 +1147,26 @@ app.post('/calculate-interest', (req, res) => {
     calculationDate 
   } = req.body;
   
-  // Fetch the bill from database
+  // Fetch the bill from database - now including silver tables
   const query = `
     SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
            "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
            "Remarks", "Interest Rate", "Initial Pledged Amount", 
-           "Principle_Adding_His", "Repay History"
+           "Principle_Adding_His", "Repay History", 'active_pledges' as "Table"
     FROM active_pledges 
+    WHERE "Bill Number" = ?
+    UNION
+    SELECT "Bill Number", "Name", "Date", "Phone Number", "Address", 
+           "Aadhar_Number", "Gold/Silver", "No_of_items", "Items", 
+           "Remarks", "Interest Rate", "Initial Pledged Amount", 
+           "Principle_Adding_His", "Repay History", 'S_active_pledges' as "Table"
+    FROM S_active_pledges 
     WHERE "Bill Number" = ?
   `;
   
-  db.get(query, [billNumber], (err, bill) => {
+  db.get(query, [billNumber, billNumber], (err, bill) => {
     if (err || !bill) {
+      console.error(err ? `Database error during calculation: ${err}` : `Bill not found for calculation: ${billNumber}`);
       return res.render('calculate-interest', { 
         bill: null, 
         error: err ? 'Error fetching bill: ' + err.message : 'Bill not found',
@@ -860,6 +1189,7 @@ app.post('/calculate-interest', (req, res) => {
         bill["Repay History"] = {};
       }
     } catch (e) {
+      console.error("Error parsing bill data for calculation:", e);
       return res.render('calculate-interest', { 
         bill: null, 
         error: 'Error parsing bill data: ' + e.message,
@@ -867,6 +1197,8 @@ app.post('/calculate-interest', (req, res) => {
         calculationResult: null
       });
     }
+    
+    console.log(`Calculating interest for bill ${billNumber} (${bill.Table})`);
     
     // Calculate interest and amount
     const calculationResult = calculateInterestAndAmount(
