@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-button">Home</a>
+        <h1 style="font-size:xx-large;">Reports</h1>
+        
+        <div class="reports-container">
+            <button onclick="window.location.href='/day-Book'" class="report-button">Day Book</button>
+            <button onclick="window.location.href='/ledger'" class="report-button">Ledger</button>
+            <button onclick="window.location.href='/pledgeRecords'" class="report-button">Pledge Records</button>
+            <button onclick="window.location.href='/releaseRecords'" class="report-button">Release Records</button>
+            <button onclick="window.location.href='/insights'" class="report-button">Insights</button>
+            <button onclick="window.location.href='/expense'" class="report-button">Expense Management</button>
+        </div>
+    </div>
+    <script>
+         document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+    </script>
+    <footer>
+        <p>Shanthi Pawn Brokers ®</p>
+    </footer>
+</body>
+</html>

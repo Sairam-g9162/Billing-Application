@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Release Records</title>
+  <link rel="stylesheet" href="/styles.css">
+
+  <style>
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .release-records-form {
+      background-color: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .date-range {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .date-range > div {
+      flex: 1;
+    }
+    
+    .preset-buttons {
+      margin: 15px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .preset-button {
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .preset-button:hover {
+      background-color: #2980b9;
+    }
+    
+    .action-button {
+      padding: 10px 15px;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .fetch-button {
+      background-color: #2ecc71;
+    }
+    
+    .download-button {
+      background-color: #1d94dd;
+      margin-right: 440px;
+      margin-bottom: -10px;
+    }
+    
+    .back-button {
+      background-color: #e74c3c;
+    }
+    
+    .back-button-form {
+      padding: 10px 15px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    
+    .download-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    
+    .bill-cell {
+      display: inline-block;
+      background-color: #f0f8ff;
+      padding: 5px;
+      margin: 2px;
+      border-radius: 3px;
+      border: 1px solid #add8e6;
+    }
+    
+    .daily-total {
+      font-weight: bold;
+      background-color: #e6f7ff;
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin: 15px 0;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+      margin-right: 10px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    .modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    }
+
+    .modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    }
+
+    .close-button {
+    float: right;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    }
+
+    .checkbox-container {
+    margin: 20px 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    }
+
+    .checkbox-container label {
+    display: block;
+    padding: 5px;
+    }
+
+    .modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    }
+
+    .modal-buttons button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    }
+
+    .modal-buttons #selectAllBtn, .modal-buttons #deselectAllBtn {
+    background-color: #f0f0f0;
+    }
+
+    .modal-buttons .download-btn {
+    background-color: #1d94dd;
+    color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Release Records</h1>
+    <a href="/reports" class="action-button back-button">Back</a>
+    
+    <div class="release-records-form">
+      <form id="releaseRecordsForm">
+        
+        <div class="date-range">
+          <div class="form-group">
+            <label for="fromDate">From Date:</label>
+            <input type="date" id="fromDate" name="fromDate" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="toDate">To Date:</label>
+            <input type="date" id="toDate" name="toDate" required>
+          </div>
+        </div>
+        
+        <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" id="tableToggle">
+              <span class="slider"></span>
+            </label>
+            <span id="toggleLabel">Standard</span>
+        </div>
+        
+        <div class="preset-buttons">
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="last-30-days">Last 30 Days</button>
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="last-3-months">Last 3 Months</button>
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="last-6-months">Last 6 Months</button>
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="current-fy">Current Financial Year</button>
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="previous-fy">Previous Financial Year</button>
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="year-to-date">Year to Date</button>
+          <button type="button" class="preset-button" style="background:#116a1ed7;" data-preset="previous-calendar-year">Previous Calendar Year</button>
+        </div>
+        
+        <div>
+          <button type="submit" class="action-button fetch-button">Fetch Data</button>
+        </div>
+      </form>
+    </div>
+    
+    <div id="downloadContainer" class="download-container" style="display: none;">
+      <button type="button" id="downloadExcel" class="action-button download-button">Download Excel</button>
+    </div>
+    
+    <div class="table-container" id="releaseRecordsTableContainer" style="display: none;">
+      <table id="releaseRecordsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Bill Numbers</th>
+            <th>Release Amounts</th>
+            <th>Gold Weight (g)</th>
+            <th>Silver Weight (g)</th>
+            <th>Daily Total</th>
+          </tr>
+        </thead>
+        <tbody id="releaseRecordsTableBody">
+          <!-- Data will be populated here -->
+        </tbody>
+      </table>
+    </div>
+    <div id="columnSelectionModal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <span class="close-button">&times;</span>
+          <h2>Select Columns to Export</h2>
+          <form id="columnSelectionForm">
+            <div class="checkbox-container">
+              <label><input type="checkbox" name="columns" value="Date" checked> Date</label>
+              <label><input type="checkbox" name="columns" value="BillNumber" checked> Bill Numbers</label>
+              <label><input type="checkbox" name="columns" value="ReleaseAmount" checked> Release Amounts</label>
+              <label><input type="checkbox" name="columns" value="GoldWeight" checked> Gold Weight (g)</label>
+              <label><input type="checkbox" name="columns" value="SilverWeight" checked> Silver Weight (g)</label>
+              <label><input type="checkbox" name="columns" value="DailyTotal" checked> Daily Total</label>
+            </div>
+            <div class="modal-buttons">
+              <button type="button" id="selectAllBtn">Select All</button>
+              <button type="button" id="deselectAllBtn">Deselect All</button>
+              <button type="submit" class="download-btn">Download</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    
+    <button class="back-button-form" onclick="window.location.href='/'">Back to Home Page</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default dates
+      const today = new Date();
+      document.getElementById('toDate').value = today.toISOString().split('T')[0];
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      // Toggle switch functionality
+      const tableToggle = document.getElementById('tableToggle');
+      const toggleLabel = document.getElementById('toggleLabel');
+      
+      tableToggle.addEventListener('change', function() {
+          toggleLabel.textContent = this.checked ? 'S Series' : 'Standard';
+      });
+      
+      // Preset date buttons
+      document.querySelectorAll('.preset-button').forEach(button => {
+          button.addEventListener('click', function() {
+              setPresetDates(this.getAttribute('data-preset'));
+          });
+      });
+      
+      // Form submission
+      document.getElementById('releaseRecordsForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+          fetchReleaseRecords();
+      });
+      
+      // Download Excel button
+     
+    });
+    document.getElementById('downloadExcel').addEventListener('click', function() {
+  // Show the column selection modal instead of immediately downloading
+    document.getElementById('columnSelectionModal').style.display = 'flex';
+    });
+
+    // Close the modal when clicking the close button
+    document.querySelector('.close-button').addEventListener('click', function() {
+    document.getElementById('columnSelectionModal').style.display = 'none';
+    });
+
+    // Close the modal when clicking outside of it
+    window.addEventListener('click', function(event) {
+    const modal = document.getElementById('columnSelectionModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+    });
+
+    // Select All button functionality
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('input[name="columns"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+    });
+
+    // Deselect All button functionality
+    document.getElementById('deselectAllBtn').addEventListener('click', function() {
+    const checkboxes = document.querySelectorAll('input[name="columns"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+    });
+
+    // Handle the form submission
+    document.getElementById('columnSelectionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get all selected columns
+    const selectedColumns = [];
+    document.querySelectorAll('input[name="columns"]:checked').forEach(checkbox => {
+        selectedColumns.push(checkbox.value);
+    });
+    
+    // Make sure at least one column is selected
+    if (selectedColumns.length === 0) {
+        alert('Please select at least one column to export.');
+        return;
+    }
+    
+    // Close the modal
+    document.getElementById('columnSelectionModal').style.display = 'none';
+    
+    // Download the Excel file with selected columns
+    downloadExcelWithColumns(selectedColumns);
+    });
+
+    document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+    // New function to download Excel with selected columns
+    function downloadExcelWithColumns(selectedColumns) {
+    const fromDate = document.getElementById('fromDate').value;
+    const toDate = document.getElementById('toDate').value;
+    const isSpecial = document.getElementById('tableToggle').checked;
+    
+    // Convert array to comma-separated string
+    const columnsParam = selectedColumns.join(',');
+    
+    // Navigate to the download URL with the selected columns
+    window.location.href = `/release-records-excel?fromDate=${fromDate}&toDate=${toDate}&isSpecial=${isSpecial}&columns=${columnsParam}`;
+    }
+
+
+    // Set dates based on preset buttons
+    function setPresetDates(preset) {
+      const today = new Date();
+      const fromDateInput = document.getElementById('fromDate');
+      const toDateInput = document.getElementById('toDate');
+      
+      // Set today as the end date by default
+      toDateInput.value = today.toISOString().split('T')[0];
+      
+      switch(preset) {
+          case 'current-fy':
+              const currentYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+              fromDateInput.value = `${currentYear}-04-01`;
+              break;
+              
+          case 'previous-fy':
+              const prevFYStart = today.getMonth() >= 3 ? today.getFullYear() - 1 : today.getFullYear() - 2;
+              const prevFYEnd = prevFYStart + 1;
+              fromDateInput.value = `${prevFYStart}-04-01`;
+              toDateInput.value = `${prevFYEnd}-03-31`;
+              break;
+              
+          case 'last-3-months':
+              const threeMonthsAgo = new Date();
+              threeMonthsAgo.setMonth(today.getMonth() - 3);
+              fromDateInput.value = threeMonthsAgo.toISOString().split('T')[0];
+              break;
+              
+          case 'last-6-months':
+              const sixMonthsAgo = new Date();
+              sixMonthsAgo.setMonth(today.getMonth() - 6);
+              fromDateInput.value = sixMonthsAgo.toISOString().split('T')[0];
+              break;
+              
+          case 'last-30-days':
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(today.getDate() - 30);
+              fromDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+              break;
+
+          case 'year-to-date':
+              fromDateInput.value = `${today.getFullYear()}-01-01`;
+              break;
+
+          case 'previous-calendar-year':
+              const prevYear = today.getFullYear() - 1;
+              fromDateInput.value = `${prevYear}-01-01`;
+              toDateInput.value = `${prevYear}-12-31`;
+              break;
+      }
+    }
+
+    // Fetch data from the server
+    function fetchReleaseRecords() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const isSpecial = document.getElementById('tableToggle').checked;
+      
+      // Show loading indicator or message here if desired
+      document.getElementById('releaseRecordsTableContainer').style.display = 'none';
+      document.getElementById('downloadContainer').style.display = 'none';
+      
+      fetch(`/release-records-data?fromDate=${fromDate}&toDate=${toDate}&isSpecial=${isSpecial}`)
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Network response was not ok');
+              }
+              return response.json();
+          })
+          .then(data => {
+              if (data.success) {
+                  displayReleaseRecords(data.groupedRecords);
+                  // Only show download button if there are records
+                  if (Object.keys(data.groupedRecords).length > 0) {
+                      document.getElementById('downloadContainer').style.display = 'flex';
+                  }
+              } else {
+                  alert('Error fetching data: ' + data.error);
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error fetching data. Please try again.');
+          });
+    }
+
+    // Display data in the table
+    function displayReleaseRecords(groupedRecords) {
+      const tableContainer = document.getElementById('releaseRecordsTableContainer');
+      const tableBody = document.getElementById('releaseRecordsTableBody');
+      tableBody.innerHTML = '';
+      
+      if (Object.keys(groupedRecords).length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No records found for the selected date range</td></tr>';
+          tableContainer.style.display = 'block';
+          document.getElementById('downloadContainer').style.display = 'none';
+          return;
+      }
+      
+      // Sort dates chronologically
+      const sortedDates = Object.keys(groupedRecords).sort((a, b) => new Date(a) - new Date(b));
+      
+      sortedDates.forEach(date => {
+          const records = groupedRecords[date];
+          const tr = document.createElement('tr');
+          
+          // Format date for display (YYYY-MM-DD to DD-MM-YYYY)
+          const dateObj = new Date(date);
+          const formattedDate = dateObj.toLocaleDateString('en-GB');
+          
+          // Calculate daily totals
+          let dailyTotal = 0;
+          let totalGoldWeight = 0;
+          let totalSilverWeight = 0;
+          
+          // Create bill number and release amount cells
+          let billNumbersHTML = '';
+          let releaseAmountsHTML = '';
+          
+          records.forEach(record => {
+              billNumbersHTML += `<span class="bill-cell">${record['Bill No']}</span> `;
+              releaseAmountsHTML += `<span class="bill-cell">${record['Release Amount'].toLocaleString()}</span> `;
+              dailyTotal += record['Release Amount'];
+              totalGoldWeight += record['Released Gold Weight'];
+              totalSilverWeight += record['Released Silver Weight'];
+          });
+          
+          tr.innerHTML = `
+              <td>${formattedDate}</td>
+              <td>${billNumbersHTML}</td>
+              <td>${releaseAmountsHTML}</td>
+              <td>${totalGoldWeight}</td>
+              <td>${totalSilverWeight}</td>
+              <td class="daily-total">${dailyTotal.toLocaleString()}</td>
+          `;
+          
+          tableBody.appendChild(tr);
+      });
+      
+      tableContainer.style.display = 'block';
+      
+      // Store data for Excel download
+      window.releaseRecordsData = groupedRecords;
+    }
+
+    // Download data as Excel
+    function downloadExcel() {
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const isSpecial = document.getElementById('tableToggle').checked;
+      
+      window.location.href = `/release-records-excel?fromDate=${fromDate}&toDate=${toDate}&isSpecial=${isSpecial}`;
+    }
+  </script>
+  <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+  </footer>
+</body>
+</html>

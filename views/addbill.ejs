@@ -26,7 +26,7 @@
           <input type="checkbox" id="useSeries" name="useSeries">
           <span class="toggle-slider"></span>
         </label>
-        <span class="toggle-label"><gradient-wrapper>Use S Series Bill Number</gradient-wrapper></span>
+        <span class="toggle-label"><gradient-wrapper>S Series</gradient-wrapper></span>
       </div>
       
       <!-- Rest of the form fields -->
@@ -39,16 +39,33 @@
         <input type="text" id="name" name="name" required>
       </div>
       <div>
+        <label for="fatherOrSpouseName"><gradient-wrapper>S/O or W/O*</gradient-wrapper></label>
+        <input type="text" id="fatherOrSpouseName" name="fatherOrSpouseName" required>
+      </div>
+
+      <div>
         <label for="date"><gradient-wrapper>Date*</gradient-wrapper></label>
-        <input type="date" id="date" name="date" required  max="<%= new Date().toISOString().split('T')[0] %>">
+        <input type="date" id="date" name="date" required>
+        <script>
+            const today = new Date().toLocaleString('en-US', {
+              timeZone: 'Asia/Kolkata'
+            });
+            const istDate = new Date(today);
+            document.getElementById('date').value = istDate.toISOString().split('T')[0];
+            document.getElementById('date').max = istDate.toISOString().split('T')[0];
+        </script>
       </div>
       <div>
         <label for="phoneNumber"><gradient-wrapper>Phone Number*</gradient-wrapper></label>
         <input type="number" id="phoneNumber" name="phoneNumber" required maxlength="10" oninput="validatePhoneNumber(this)">
       </div>
       <div>
-        <label for="address"><gradient-wrapper>Address*</gradient-wrapper></label>
-        <textarea id="address" name="address" required></textarea>
+        <label for="address"><gradient-wrapper>Address</gradient-wrapper></label>
+        <textarea id="address" name="address" ></textarea>
+      </div>
+      <div>
+        <label for="townOrCity"><gradient-wrapper>Town/City*</gradient-wrapper></label>
+        <input type="text" id="townOrCity" name="townOrCity" required>
       </div>
       <div>
         <label for="aadharNumber"><gradient-wrapper>Aadhar Number</gradient-wrapper></label>
@@ -56,24 +73,44 @@
       </div>
       <div>
         <label for="goldSilver"><gradient-wrapper>Gold/Silver*</gradient-wrapper></label>
-        <select id="goldSilver" name="goldSilver" required>
-          <option value="Gold">Gold</option>
+        <select id="goldSilver" name="goldSilver" required onchange="toggleGrossWeightFields()">
+          <option value="Gold">Gold</option>  
           <option value="Silver">Silver</option>
+          <option value="GoldSilver">Gold & Silver</option>
         </select>
       </div>
+
       <div>
         <label for="noOfItems"><gradient-wrapper>Number of Items*</gradient-wrapper></label>
         <input type="number" id="noOfItems" name="noOfItems" min="1" required>
         <button type="button" onclick="generateItemFields()">Generate Item Fields</button>
       </div>
       <div id="itemFields" class="item-grid"></div>
+      
+      <!-- Total Weight Display -->
+      <div id="totalWeightsContainer" style="margin-top: 15px; display: none;">
+        <p><strong>Total Items Weight: </strong><span id="totalWeight">0.000</span> gms</p>
+      </div>
+      
+      <!-- Gross Weight Fields (repositioned after item fields) -->
+      <div id="grossWeightContainer" style="margin-top: 15px; display: none;">
+        <div id="grossGoldWeightContainer" style="display: none;">
+          <label for="goldGrossWeight"><gradient-wrapper>Gross Gold Weight (gms)*</gradient-wrapper></label>
+          <input type="number" id="goldGrossWeight" name="goldGrossWeight" step="0.001" min="0" readonly>
+        </div>
+        <div id="grossSilverWeightContainer" style="display: none;">
+          <label for="silverGrossWeight"><gradient-wrapper>Gross Silver Weight (gms)*</gradient-wrapper></label>
+          <input type="number" id="silverGrossWeight" name="silverGrossWeight" step="0.001" min="0" readonly>
+        </div>
+      </div>
+      
       <div>
         <label for="remarks"><gradient-wrapper>Remarks</gradient-wrapper></label>
         <textarea id="remarks" name="remarks"></textarea>
       </div>
       <div>
         <label for="interestRate"><gradient-wrapper>Interest Rate (%)*</gradient-wrapper></label>
-        <input type="number" id="interestRate" name="interestRate" step="0.1" required>
+        <input type="number" id="interestRate" name="interestRate" step="0.1" value=16 readonly required>
       </div>
       <div>
         <label for="initialPledgedAmount"><gradient-wrapper>Initial Pledged Amount*</gradient-wrapper></label>
@@ -81,6 +118,7 @@
       </div>
       <!-- Hidden fields for JSON data -->
       <input type="hidden" id="items" name="items" value="{}">
+      <input type="hidden" id="itemsValue" name="itemsValue" value="{}">
       <input type="hidden" id="principleAddingHis" name="principleAddingHis" value="{}">
       <input type="hidden" id="repayHistory" name="repayHistory" value="{}">
       
@@ -99,6 +137,7 @@
         <p><strong>Name:</strong> <span id="confirmName"></span></p>
         <p><strong>Phone Number:</strong> <span id="confirmPhone"></span></p>
         <p><strong>Pledged Amount:</strong> <span id="confirmAmount"></span></p>
+        <div id="confirmGrossWeights"></div>
         <p><strong>Items:</strong> <span id="confirmItems"></span></p>
         <p><strong>Remarks:</strong> <span id="confirmRemarks"></span></p>
       </div>
@@ -108,6 +147,7 @@
       </div>
     </div>
   </div>
+ 
 
   <script>
     window.addEventListener('load', function() {
@@ -117,13 +157,75 @@
         // Set the bill number from server
         document.getElementById('billNumber').value = '<%= nextBillNumber %>';
         
-        // Set default date to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('date').value = today;
+        document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+        // Set default date to today in IST
+        const today = new Date();
+        today.setHours(today.getHours() + 5); // Add 5 hours
+        today.setMinutes(today.getMinutes() + 30); // Add 30 minutes
+        document.getElementById('date').value = today.toISOString().split('T')[0];
         
         // Clear item fields
         document.getElementById('itemFields').innerHTML = '';
+        
+        // Initialize gross weight fields visibility
+        toggleGrossWeightFields();
     });
+
+    // Add this event listener to the form to prevent default submission on Enter key
+    document.getElementById('billForm').addEventListener('keypress', function(e) {
+      // Check if the key pressed was Enter
+      if (e.key === 'Enter') {
+        // Prevent the default form submission
+        e.preventDefault();
+        
+        showConfirmation(e);
+      }
+    });
+  
+
+    // Toggle gross weight fields based on gold/silver selection
+    function toggleGrossWeightFields() {
+      const selection = document.getElementById('goldSilver').value;
+      const goldContainer = document.getElementById('grossGoldWeightContainer');
+      const silverContainer = document.getElementById('grossSilverWeightContainer');
+      const grossWeightContainer = document.getElementById('grossWeightContainer');
+      
+      // Reset values and show the container if needed
+      document.getElementById('goldGrossWeight').value = '0.000';
+      document.getElementById('silverGrossWeight').value = '0.000';
+      
+      if (selection === 'Gold' || selection === 'Silver' || selection === 'GoldSilver') {
+        grossWeightContainer.style.display = 'block';
+      } else {
+        grossWeightContainer.style.display = 'none';
+      }
+      
+      // Toggle visibility
+      if (selection === 'Gold' || selection === 'GoldSilver') {
+        goldContainer.style.display = 'block';
+        document.getElementById('goldGrossWeight').required = true;
+      } else {
+        goldContainer.style.display = 'none';
+        document.getElementById('goldGrossWeight').required = false;
+      }
+      
+      if (selection === 'Silver' || selection === 'GoldSilver') {
+        silverContainer.style.display = 'block';
+        document.getElementById('silverGrossWeight').required = true;
+      } else {
+        silverContainer.style.display = 'none';
+        document.getElementById('silverGrossWeight').required = false;
+      }
+      
+      // Update gross weights if we have items already
+      updateGrossWeights();
+    }
 
     // Add event listener for the S series toggle switch
     document.getElementById('useSeries').addEventListener('change', function() {
@@ -142,30 +244,144 @@
         });
     }
 
+    // Format the weight with 3 decimal places
+    function formatWeight(input) {
+      if (input.value) {
+        // Parse the input value and format it to 3 decimal places
+        const formattedValue = parseFloat(input.value).toFixed(3);
+        // Update the input field with the formatted value
+        input.value = formattedValue;
+        
+        // Update total weight and gross weights
+        updateTotalWeight();
+        updateGrossWeights();
+      }
+    }
+
+    // Update gross weights based on item types
+    function updateGrossWeights() {
+      const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      const goldSilverSelection = document.getElementById('goldSilver').value;
+      
+      if (isNaN(noOfItems) || noOfItems < 1) {
+        return;
+      }
+      
+      let goldWeight = 0;
+      let silverWeight = 0;
+      
+      for (let i = 1; i <= noOfItems; i++) {
+        const typeToggle = document.getElementById(`itemType${i}`);
+        const weightInput = document.getElementById(`itemWeight${i}`);
+        
+        if (weightInput && !isNaN(parseFloat(weightInput.value))) {
+          const weight = parseFloat(weightInput.value);
+          
+          // If we're in Gold & Silver mode, check the toggle for each item
+          if (goldSilverSelection === 'GoldSilver') {
+            if (typeToggle && typeToggle.checked) {
+              silverWeight += weight;
+            } else {
+              goldWeight += weight;
+            }
+          } 
+          // If it's just Gold mode, all weights go to gold
+          else if (goldSilverSelection === 'Gold') {
+            goldWeight += weight;
+          } 
+          // If it's just Silver mode, all weights go to silver
+          else if (goldSilverSelection === 'Silver') {
+            silverWeight += weight;
+          }
+        }
+      }
+      
+      // Update the gross weight fields with formatted values
+      if (goldSilverSelection === 'Gold' || goldSilverSelection === 'GoldSilver') {
+        document.getElementById('goldGrossWeight').value = goldWeight.toFixed(3);
+      }
+      
+      if (goldSilverSelection === 'Silver' || goldSilverSelection === 'GoldSilver') {
+        document.getElementById('silverGrossWeight').value = silverWeight.toFixed(3);
+      }
+    }
+
+    // When generating item fields, add the gold/silver toggle and format the weight
     function generateItemFields() {
       const noOfItems = parseInt(document.getElementById('noOfItems').value);
       const itemFieldsDiv = document.getElementById('itemFields');
+      const goldSilverSelection = document.getElementById('goldSilver').value;
+      
       itemFieldsDiv.innerHTML = '';
 
       if (isNaN(noOfItems) || noOfItems < 1) {
-        showFormError('noOfItems', 'Please enter a valid number of items (minimum 1).');
+        showErrorMessage('Please enter a valid number of items (minimum 1).');
         return;
       }
 
       for (let i = 1; i <= noOfItems; i++) {
         const itemRow = document.createElement('div');
         itemRow.className = 'item-row';
-        itemRow.innerHTML = `
+        
+        // Basic item inputs
+        let itemHTML = `
           <div class="item-label">Item ${i}:</div>
           <div class="item-inputs">
-            <input type="text" id="itemName${i}" name="itemName${i}" placeholder="Item name (e.g., Ring)" required>
-            <input type="text" id="itemWeight${i}" name="itemWeight${i}" placeholder="Weight (e.g., 5)" required>
+            <input type="text" id="itemName${i}" name="itemName${i}" placeholder="Item name" required>
+        `;
+        
+        // Add gold/silver toggle for Gold & Silver mode
+        if (goldSilverSelection === 'GoldSilver') {
+          itemHTML += `
+            <div class="metal-toggle-container">
+              <span class="metal-toggle-label">Gold</span>
+              <label class="toggle-switch small">
+                <input type="checkbox" id="itemType${i}" name="itemType${i}" onchange="updateGrossWeights()">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="metal-toggle-label">Silver</span>
+            </div>
+          `;
+        }
+        
+        // Weight and value inputs
+        itemHTML += `
+            <input type="number" id="itemWeight${i}" name="itemWeight${i}" placeholder="Weight" step="0.001" min="0" required 
+                   onblur="formatWeight(this)" onchange="updateTotalWeight()">
             <span>gms</span>
+            <input type="number" id="itemValue${i}" name="itemValue${i}" placeholder="Value (₹)" min="0" required>
           </div>
         `;
+        
+        itemRow.innerHTML = itemHTML;
         itemFieldsDiv.appendChild(itemRow);
       }
+      
+      document.getElementById('totalWeightsContainer').style.display = 'block';
+      
+      // Initialize gross weights
+      updateTotalWeight();
+      updateGrossWeights();
     }
+
+    function updateTotalWeight() {
+      const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      let totalWeight = 0;
+      
+      for (let i = 1; i <= noOfItems; i++) {
+        const weightInput = document.getElementById(`itemWeight${i}`);
+        if (weightInput && !isNaN(parseFloat(weightInput.value))) {
+          totalWeight += parseFloat(weightInput.value);
+        }
+      }
+      
+      // Display with 3 decimal places
+      document.getElementById('totalWeight').textContent = totalWeight.toFixed(3);
+      
+      // Update gross weights
+      updateGrossWeights();
+    }
+    
     function validatePhoneNumber(input) {
       // Ensure it's a valid 10-digit phone number
       if (input.value.length > 10) {
@@ -174,6 +390,13 @@
       
       // Only allow digits
       input.value = input.value.replace(/[^0-9]/g, '');
+      
+      // Validate length
+      if (input.value.length !== 10 && input.value.length > 0) {
+        input.setCustomValidity('Phone number must be 10 digits');
+      } else {
+        input.setCustomValidity('');
+      }
     }
 
     function validateAadharNumber(input) {
@@ -184,17 +407,12 @@
       
       // Only allow digits
       input.value = input.value.replace(/[^0-9]/g, '');
-    }
-
-    function validateDate(input) {
-      const selectedDate = new Date(input.value);
-      const today = new Date();
-      const startOfYear = new Date(today.getFullYear(), 0, 1);
       
-      // Check if date is in current year and not future date
-      if (selectedDate < startOfYear || selectedDate > today) {
-        alert('Please select a date within the current year and not in the future.');
-        input.value = today.toISOString().split('T')[0];
+      // Validate length if provided
+      if (input.value.length !== 0 && input.value.length !== 12) {
+        input.setCustomValidity('Aadhar number must be 12 digits');
+      } else {
+        input.setCustomValidity('');
       }
     }
 
@@ -209,14 +427,15 @@
         return;
       }
       
-      // Build the items JSON
-      const itemsObj = buildItemsJson();
-      if (!itemsObj) {
+      // Build the items and values JSON
+      const result = buildItemsJson();
+      if (!result) {
         return; // Validation failed
       }
       
-      // Set the hidden field value
-      document.getElementById('items').value = JSON.stringify(itemsObj);
+      // Set the hidden field values
+      document.getElementById('items').value = JSON.stringify(result.itemsObj);
+      document.getElementById('itemsValue').value = JSON.stringify(result.itemsValueObj);
 
       // Set confirmation modal details
       document.getElementById('confirmBillType').textContent = 
@@ -226,10 +445,25 @@
       document.getElementById('confirmPhone').textContent = form.phoneNumber.value;
       document.getElementById('confirmAmount').textContent = form.initialPledgedAmount.value;
       
+      // Add gross weight info to confirmation
+      const grossWeightsDiv = document.getElementById('confirmGrossWeights');
+      grossWeightsDiv.innerHTML = '';
+      
+      const goldSilver = form.goldSilver.value;
+      if (goldSilver === 'Gold' || goldSilver === 'GoldSilver') {
+        const p = document.createElement('p');
+        p.innerHTML = `<strong>Gross Gold Weight:</strong> ${form.goldGrossWeight.value} gms`;
+        grossWeightsDiv.appendChild(p);
+      }
+      
+      if (goldSilver === 'Silver' || goldSilver === 'GoldSilver') {
+        const p = document.createElement('p');
+        p.innerHTML = `<strong>Gross Silver Weight:</strong> ${form.silverGrossWeight.value} gms`;
+        grossWeightsDiv.appendChild(p);
+      }
+      
       // Format the items for display
-      const itemsForDisplay = Object.entries(itemsObj)
-        .map(([name, weight]) => `${name}: ${weight}`)
-        .join(', ');
+      const itemsForDisplay = result.itemsForDisplay.join(', ');
       document.getElementById('confirmItems').textContent = itemsForDisplay;
       
       document.getElementById('confirmRemarks').textContent = form.remarks.value || 'None';
@@ -239,23 +473,40 @@
 
     function buildItemsJson() {
       const noOfItems = parseInt(document.getElementById('noOfItems').value);
+      const goldSilverSelection = document.getElementById('goldSilver').value;
       const itemsObj = {};
+      const itemsValueObj = {};
+      const itemsForDisplay = [];
       
       // Validate all fields are filled
       for (let i = 1; i <= noOfItems; i++) {
         const nameInput = document.getElementById(`itemName${i}`);
         const weightInput = document.getElementById(`itemWeight${i}`);
+        const valueInput = document.getElementById(`itemValue${i}`);
         
-        if (!nameInput || !nameInput.value || !weightInput || !weightInput.value) {
-          alert('Please fill in all item details');
+        if (!nameInput || !nameInput.value || !weightInput || !weightInput.value || !valueInput || !valueInput.value) {
+          showErrorMessage('Please fill in all item details');
           return null;
         }
         
-        // Add to the JSON object with format {"itemName": "weightgms"}
-        itemsObj[nameInput.value] = `${weightInput.value}gms`;
+        // Format weight with 3 decimal places
+        const weight = parseFloat(weightInput.value).toFixed(3);
+        
+        // Add to the JSON objects
+        itemsObj[nameInput.value] = `${weight}gms`;
+        itemsValueObj[nameInput.value] = valueInput.value;
+        
+        // Metal type for display
+        let metalType = goldSilverSelection;
+        if (goldSilverSelection === 'GoldSilver') {
+          const typeToggle = document.getElementById(`itemType${i}`);
+          metalType = typeToggle && typeToggle.checked ? 'Silver' : 'Gold';
+        }
+        
+        itemsForDisplay.push(`${nameInput.value}: ${weight}gms (${metalType})`);
       }
       
-      return itemsObj;
+      return { itemsObj, itemsValueObj, itemsForDisplay };
     }
 
     function closeModal() {
@@ -308,14 +559,126 @@
           }, 300);
       }, 3000);
     }
-
-    // Add event listener for date validation
-    document.getElementById('date').addEventListener('change', function() {
-      validateDate(this);
-    });
+    
+    function showErrorMessage(message) {
+      showToaster(message, 'error');
+    }
   </script>
+  
   <style>
-    /* Existing styles */
+    .success-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .success-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        text-align: center;
+        animation: dropIn 0.5s ease-out;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        max-width: 400px;
+        width: 90%;
+    }
+
+    .success-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+
+    .success-button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .print-btn {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .new-bill-btn {
+        background: #2196F3;
+        color: white;
+    }
+
+    .home-btn {
+        background: #607D8B;
+        color: white;
+    }
+
+    .success-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .checkmark-circle {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+    }
+
+    .success-message {
+        color: #333;
+        font-size: 1.2em;
+        margin: 15px 0;
+    }
+
+    @keyframes dropIn {
+        0% {
+            transform: translateY(-100px);
+            opacity: 0;
+        }
+        60% {
+            transform: translateY(20px);
+        }
+        100% {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .checkmark {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        stroke-width: 2;
+        stroke: #4CAF50;
+        stroke-miterlimit: 10;
+        box-shadow: inset 0 0 0 #4CAF50;
+        animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+    }
+
+    @keyframes fill {
+        100% {
+            box-shadow: inset 0 0 0 50px #4CAF50;
+        }
+    }
+
+    @keyframes scale {
+        0%, 100% {
+            transform: none;
+        }
+        50% {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+    }
     .modal {
       display: none;
       position: fixed;
@@ -368,6 +731,11 @@
       margin-right: 10px;
     }
     
+    .toggle-switch.small {
+      width: 40px;
+      height: 20px;
+    }
+    
     .toggle-switch input {
       opacity: 0;
       width: 0;
@@ -381,11 +749,26 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: #ccc;
+      background-color: #cccccc;
       transition: .3s;
       border-radius: 24px;
     }
     
+    /* Main S Series toggle remains blue */
+    input:checked + .toggle-slider {
+      background-color: #2196F3;
+    }
+    
+    /* Gold/Silver toggle specific styles */
+    .metal-toggle-container .toggle-switch .toggle-slider {
+      background-color: #FFD700; /* Gold color when unchecked */
+    }
+    
+    .metal-toggle-container .toggle-switch input:checked + .toggle-slider {
+      background-color: #C0C0C0; /* Silver color when checked */
+    }
+    
+    /* Rest of the toggle styles */
     .toggle-slider:before {
       position: absolute;
       content: "";
@@ -398,12 +781,19 @@
       border-radius: 50%;
     }
     
-    input:checked + .toggle-slider {
-      background-color: #2196F3;
+    .toggle-switch.small .toggle-slider:before {
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
     }
     
     input:checked + .toggle-slider:before {
       transform: translateX(26px);
+    }
+    
+    .toggle-switch.small input:checked + .toggle-slider:before {
+      transform: translateX(20px);
     }
     
     .toggle-label {
@@ -414,6 +804,40 @@
       display: flex;
       align-items: center;
       margin-bottom: 15px;
+    }
+    
+    /* Metal toggle styles */
+    .metal-toggle-container {
+      display: flex;
+      align-items: center;
+      margin: 0 10px;
+      background-color: #fdfcfc;
+      padding: 2px 8px;
+      border-radius: 16px;
+      border: 1px solid #dee2e6;
+    }
+    
+    .metal-toggle-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin: 0 5px;
+    }
+    
+    /* Gross weight container styles */
+    #grossWeightContainer {
+      background-color: #f9f9f9;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      margin-bottom: 15px;
+    }
+    
+    #grossWeightContainer > div {
+      margin-bottom: 10px;
+    }
+    
+    #grossWeightContainer > div:last-child {
+      margin-bottom: 0;
     }
     
     #toaster {
@@ -518,20 +942,65 @@
         width: 80px;
         font-weight: bold;
     }
+    .item-inputs {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 10px;
+}
+
+.item-inputs input[type="text"] {
+    flex: 2;
+}
+
+.item-inputs input[type="number"] {
+    flex: 1;
+}
+
+.item-inputs span {
+    flex: 0 0 auto;
+}
+
+/* Making the form responsive */
+@media (max-width: 768px) {
+    .item-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .item-label {
+        width: 100%;
+        margin-bottom: 5px;
+    }
     
     .item-inputs {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-grow: 1;
+        width: 100%;
+        flex-wrap: wrap;
     }
     
-    .item-inputs input {
-        flex: 1;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
+    .modal-content {
+        width: 90%;
     }
-</style>
+}
+
+/* Total weight container styling */
+#totalWeightsContainer {
+    background-color: #f0f8ff;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #b8daff;
+    margin-bottom: 15px;
+}
+
+/* Modal display fix */
+.modal {
+    display: none;
+}
+
+.modal[style*="display: block"] {
+    display: flex !important;
+}
+    
+  </style>
 </body>
 </html>

@@ -10,6 +10,44 @@
       margin-bottom: 20px;
       text-align: left;
     }
+    .error-card {
+  border-left: 5px solid #ff4444;
+  background-color: #fff8f8;
+}
+
+.error-icon {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.error-icon svg {
+  color: #ff4444;
+}
+
+.error-message {
+  color: #ff4444;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin: 15px 0;
+}
+
+.action-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.action-button:hover {
+  background-color: #45a049;
+}
     table {
       width: 100%;
       border-collapse: collapse;
@@ -29,11 +67,20 @@
     .principal-form {
       margin-top: 20px;
     }
+   h1::after {
+        content: '';
+        position: absolute;
+        width: 70%;
+        height: 2px;
+        background: linear-gradient(to right, transparent, #DA4453, #89216B, transparent);
+        bottom: -5px;
+        left: 15%;
+      } 
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Principal Addition</h1>
+    <h1 style="position: relative; display: inline-block; margin-bottom: 25px;">Principal Addition</h1>
     <a href="/" class="back-button">Home</a>
 
     <!-- Bill Search Form -->
@@ -53,75 +100,97 @@
     <% } %>
 
     <!-- Display bill details -->
-    <% if (locals.bill) { %>
-      <div class="bill-card">
-        <div class="bill-card-content">
-          <h3>Bill Number: <%= bill["Bill Number"] %></h3>
-          <p><strong>Name:</strong> <%= bill["Name"] %></p>
-          <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
-          <p><strong>Pledged Date:</strong> <%= bill['Date']%></p>
-          <button class="print-button" onclick="redirectToPrintBill('<%= bill["Bill Number"] %>')">Print Bill</button>
+   <!-- Display bill details -->
+<% if (locals.bill) { %>
+  <% if (bill.Status === 'Released') { %>
+    <!-- Display message for released bills -->
+    <div class="bill-card error-card">
+      <div class="bill-card-content">
+        <div class="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        <h3>Bill Number: <%= bill["Bill Number"] %> (Released)</h3>
+        <p class="error-message">Principal addition is not possible for released bills.</p>
+        <p>To view the complete details of this bill, click the button below:</p>
+        <button class="action-button" onclick="window.location.href='/find-bill?billNumber=<%= bill["Bill Number"] %>'">View Bill Details</button>
+      </div>
+    </div>
+  <% } else { %>
+    <!-- Original bill display for active bills -->
+    <div class="bill-card">
+      <div class="bill-card-content">
+        <h3>Bill Number: <%= bill["Bill Number"] %></h3>
+        <p><strong>Name:</strong> <%= bill["Name"] %></p>
+        <p><strong>Initial Pledged Amount:</strong> <%= bill["Initial Pledged Amount"] %></p>
+        <p><strong>Pledged Date:</strong> <%= bill['Date']%></p>
+        <button class="print-button" style="align-items: end;" onclick="redirectToPrintBill('<%= bill["Bill Number"] %>')">Print Bill</button>
+        <p style="font-size: 16px; font-weight:700; color: #046722;">Note: For multiple Principal additions on same day, submit total amount once</p>
 
-          <!-- Display Principal Addition History in a table -->
-          <div class="principal-history">
-            <h4><gradient-wrapper>Principal Addition History</gradient-wrapper></h4>
-            <% 
-            let principalHistory = {};
-            if (bill["Principle_Adding_His"]) {
-              try {
-                principalHistory = JSON.parse(bill["Principle_Adding_His"]);
-              } catch(e) {
-                // If not valid JSON, display error
-                principalHistory = {};
-              }
+
+        <div class="principal-history">
+          <h4><gradient-wrapper>Principal Addition History</gradient-wrapper></h4>
+          <% 
+          let principalHistory = {};
+          if (bill["Principle_Adding_His"]) {
+            try {
+              principalHistory = JSON.parse(bill["Principle_Adding_His"]);
+            } catch(e) {
+              // If not valid JSON, display error
+              principalHistory = {};
             }
-            %>
-            
-            <% if (Object.keys(principalHistory).length > 0) { %>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <% Object.entries(principalHistory).forEach(([date, amount]) => { %>
-                    <tr>
-                      <td><%= date %></td>
-                      <td><%= amount %></td>
-                    </tr>
-                  <% }); %>
-                </tbody>
-              </table>
-            <% } else { %>
-              <p>No principal addition history found</p>
-            <% } %>
-          </div>
+          }
+          %>
           
-          <!-- Principal Addition Form -->
-          <div class="principal-form">
-            <h4><gradient-wrapper>Add Principal Amount</gradient-wrapper></h4>
-            <form id="principalForm">
-              <input type="hidden" id="formBillNumber" value="<%= bill['Bill Number'] %>">
-              <input type="hidden" id="formName" value="<%= bill['Name'] %>">
-              
-              <div>
-                <label for="addDate">Date:</label>
-                <input type="date" id="addDate" required>
-              </div>
-              
-              <div>
-                <label for="addAmount">Amount:</label>
-                <input type="number" id="addAmount" required>
-              </div>
-              
-              <button type="button" onclick="previewAddition()">Preview</button>
-            </form>
-          </div>
+          <% if (Object.keys(principalHistory).length > 0) { %>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% Object.entries(principalHistory).forEach(([date, amount]) => { %>
+                  <tr>
+                    <td><%= date %></td>
+                    <td><%= amount %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          <% } else { %>
+            <p>No principal addition history found</p>
+          <% } %>
+        </div>
+        
+        <!-- Principal Addition Form -->
+        <div class="principal-form">
+          <h4><gradient-wrapper>Add Principal Amount</gradient-wrapper></h4>
+          <form id="principalForm" onsubmit="handleFormSubmit(event)">
+            <input type="hidden" id="formBillNumber" value="<%= bill['Bill Number'] %>">
+            <input type="hidden" id="formName" value="<%= bill['Name'] %>">
+            
+            <div>
+              <label for="addDate">Date:</label>
+              <input type="date" id="addDate" required>
+            </div>
+            
+            <div>
+              <label for="addAmount">Amount:</label>
+              <input type="number" id="addAmount" required>
+            </div>
+            
+            <button type="button" onclick="previewAddition()">Preview</button>
+          </form>
         </div>
       </div>
-    <% } %>
+    </div>
+  <% } %>
+<% } %>
 
     <!-- Back to Home Button -->
     <button class="back-button-form" onclick="window.location.href='/'">Back to Home Page</button>
@@ -168,6 +237,13 @@
       }
     });
     
+    document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
     // Preview function
     function previewAddition() {
       const billNumber = document.getElementById('formBillNumber').value;
@@ -193,6 +269,9 @@
       // Show modal
       document.getElementById('confirmationModal').style.display = 'block';
     }
+    document.getElementById('billNumber').addEventListener('input', function(e) {
+      this.value = this.value.toUpperCase();
+    });
     
     // Close modal
     function closeModal() {
@@ -247,7 +326,10 @@
         alert('Error: ' + error.message);
       });
     }
-    
+    function handleFormSubmit(event){
+      event.preventDefault();
+      previewAddition();
+    }
     // Close modal when clicking outside
     window.onclick = function(event) {
       const modal = document.getElementById('confirmationModal');
@@ -256,5 +338,8 @@
       }
     }
   </script>
+   <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+</footer>
 </body>
 </html>

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insights - Shanthi Pawn Brokers</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .back-button {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 8px 16px;
+      background-color: #f1f1f1;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    
+    .reserve-info {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  border-left: 4px solid #ffc107;
+  border-right: 4px solid silver;
+}
+.reserve-values {
+  display: flex;
+  flex-grow: 1;
+  justify-content: space-around;
+}
+
+.reserve-item {
+  position: relative;
+  background-color: white;
+  border-radius: 10px;
+  padding: 15px 20px;
+  min-width: 150px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+}
+
+.reserve-item:hover {
+  transform: translateY(-3px);
+}
+
+.reserve-item h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.reserve-item p {
+  margin: 8px 0 0;
+  font-size: 26px;
+  font-weight: bold;
+  color: #212529;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+    
+    .series-toggle {
+      margin-left: 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .series-toggle label {
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    
+    .filter-container {
+  background: linear-gradient(to right, #f8f9fa, #e9ecef);
+  border-radius: 12px;
+  padding: 22px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  border-left: 4px solid #2196F3;
+}
+
+.reserve-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 10px 10px 0 0;
+}
+
+.reserve-item:nth-child(1)::before {
+  background: linear-gradient(to right, #ffd700, #ffab00); /* Gold gradient */
+}
+
+.reserve-item:nth-child(2)::before {
+  background: linear-gradient(to right, #c0c0c0, #9e9e9e); /* Silver gradient */
+}
+
+.filter-header {
+  font-weight: bold;
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+    
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .filter-field {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .filter-field label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .filter-field select,
+.filter-field input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.filter-field select:focus,
+.filter-field input:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+}
+    
+    .date-range {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .date-range input {
+      flex: 1;
+    }
+    
+    button[type="submit"] {
+  background: linear-gradient(to bottom, #4CAF50, #43a047);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+button[type="submit"]:hover {
+  background: linear-gradient(to bottom, #43a047, #388e3c);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+    
+    .results {
+      margin-top: 30px;
+    }
+    .bill-card {
+    background-color: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    position: relative;
+    border-left: 4px solid rgb(20, 148, 122);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .bill-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  .bill-age {
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: linear-gradient(to right, #ff9800, #f57c00);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  }
+
+  .bill-card-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .bill-card-header h3 {
+    margin: 0;
+    color: #1e88e5;
+    font-size: 18px;
+  }
+
+  .bill-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 15px;
+    padding: 5px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .bill-info-item {
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+  }
+
+  .bill-info-item .label {
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  .bill-info-item .value {
+    color: #212529;
+    font-weight: 500;
+  }
+
+  .bill-card-content {
+    margin-bottom: 10px;
+  }
+
+  .items-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .items-table th,
+  .items-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .items-table th {
+    background-color: #e9ecef;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .transaction-histories-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+  }
+
+  .transaction-history {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 240px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .transaction-history.principal::before {
+    content: '';
+    display: block;
+    height: 3px;
+    width: 40px;
+    background-color: #4CAF50;
+    margin-bottom: 8px;
+    border-radius: 2px;
+  }
+
+  .transaction-history.repayment::before {
+    content: '';
+    display: block;
+    height: 3px;
+    width: 40px;
+    background-color: #FF9800;
+    margin-bottom: 8px;
+    border-radius: 2px;
+  }
+
+  .transaction-history strong {
+    color: #495057;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  .transaction-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .transaction-table th,
+  .transaction-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .transaction-table th {
+    background-color: #e9ecef;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    gap: 10px;
+  }
+
+  .action-button {
+    background: linear-gradient(to bottom, #2196F3, #1e88e5);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+.action-button:hover {
+  background: linear-gradient(to bottom, #1e88e5, #1976d2);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.export-button {
+  background: linear-gradient(to bottom, #4CAF50, #43a047);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-right: auto;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.export-button:hover {
+  background: linear-gradient(to bottom, #43a047, #388e3c);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+    
+    
+    
+    .no-results {
+      text-align: center;
+      padding: 30px;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      color: #666;
+    }
+    
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- <a class="back-button href="/">Home</a> -->
+    <button class="back-button" onclick="window.location.href='/'">Home</button>
+    <h1 style="position: relative; display: inline-block; margin-bottom: 25px;">Insights</h1>
+    
+    <!-- Display error message -->
+    <% if (locals.error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+    
+    <!-- Reserve Info Section -->
+    <div class="reserve-info">
+      <div class="reserve-values">
+        <div class="reserve-item">
+          <h3>Gold in Reserve</h3>
+          <p><%= reserveData["Gold in Reserve"] || 0 %> gm</p>
+        </div>
+        <div class="reserve-item">
+          <h3>Silver in Reserve</h3>
+          <p><%= reserveData["Silver in Reserve"] || 0 %> gm</p>
+        </div>
+      </div>
+      <form id="series-form" method="POST" action="/insights">
+        <div class="series-toggle">
+          <label for="seriesType">Series Type:</label>
+          <select id="seriesType" name="seriesType" onchange="applySeriesFilter()">
+            <option value="standard" <%= locals.seriesType !== 'S' ? 'selected' : '' %>>Standard</option>
+            <option value="S" <%= locals.seriesType === 'S' ? 'selected' : '' %>>S Series</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Filter Form -->
+    <form method="POST" action="/insights">
+      <input type="hidden" name="seriesType" value="<%= locals.seriesType || 'standard' %>">
+      <div class="filter-container">
+        <div class="filter-header">Filters</div>
+        
+        <!-- Age Filter -->
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="ageFilter">Bill Age:</label>
+            <select id="ageFilter" name="ageFilter" onchange="toggleCustomDateFields()">
+              <option value="">Any Age</option>
+              <option value="3years" <%= locals.filters && locals.filters.ageFilter === '3years' ? 'selected' : '' %>>Beyond 3 Years</option>
+              <option value="2years" <%= locals.filters && locals.filters.ageFilter === '2years' ? 'selected' : '' %>>Beyond 2 Years</option>
+              <option value="1year" <%= locals.filters && locals.filters.ageFilter === '1year' ? 'selected' : '' %>>Beyond 1 Year</option>
+              <option value="6months" <%= locals.filters && locals.filters.ageFilter === '6months' ? 'selected' : '' %>>Beyond 6 Months</option>
+              <option value="custom" <%= locals.filters && locals.filters.ageFilter === 'custom' ? 'selected' : '' %>>Custom Date Range</option>
+            </select>
+          </div>
+          
+          <!-- Custom Date Range fields (initially hidden) -->
+          <div class="filter-field" id="customDateContainer" style="<%= locals.filters && locals.filters.ageFilter === 'custom' ? '' : 'display: none;' %>">
+            <label>Custom Date Range:</label>
+            <div class="date-range">
+              <input type="date" id="customStartDate" name="customStartDate" value="<%= locals.filters && locals.filters.customStartDate || '' %>">
+              <span>to</span>
+              <input type="date" id="customEndDate" name="customEndDate" value="<%= locals.filters && locals.filters.customEndDate || '' %>">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Repayment Status Filter -->
+        <div class="filter-row">
+          <div class="filter-field">
+            <label for="repaymentStatus">Transaction Status:</label>
+            <select id="repaymentStatus" name="repaymentStatus">
+                <option value="">Any Status</option>
+                <option value="noRepayment" <%= locals.filters && locals.filters.repaymentStatus === 'noRepayment' ? 'selected' : '' %>>No Repayment</option>
+                <option value="hasRepayment" <%= locals.filters && locals.filters.repaymentStatus === 'hasRepayment' ? 'selected' : '' %>>Has Repayment</option>
+                <option value="noPrincipal" <%= locals.filters && locals.filters.repaymentStatus === 'noPrincipal' ? 'selected' : '' %>>No Principal Addition</option>
+                <option value="hasPrincipal" <%= locals.filters && locals.filters.repaymentStatus === 'hasPrincipal' ? 'selected' : '' %>>Has Principal Addition</option>
+                <option value="hasBoth" <%= locals.filters && locals.filters.repaymentStatus === 'hasBoth' ? 'selected' : '' %>>Has Both Principal & Repayment</option>
+              </select>
+          </div>
+        </div>
+        
+        <div class="filter-row" style="justify-content: center; margin-top: 20px;">
+          <button style="  background: linear-gradient(to right, #DA4453, #89216B);" type="submit">Apply Filters</button>
+        </div>
+      </div>
+    </form>
+    
+    <!-- Display Results -->
+    <!-- Display Results -->
+<div class="results">
+    <% if (locals.bills && bills.length > 0) { %>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Found <%= bills.length %> Bills</h2>
+        <button id="exportExcelBtn" class="export-button">Export to Excel</button>
+      </div>
+      
+      <% bills.forEach(bill => { %>
+        <!-- Bill Card Structure -->
+        <div class="bill-card">
+          <!-- Bill Age Badge (remains at the top right) -->
+          <div class="bill-age">
+            Age: <%= bill.age.years %> year<%= bill.age.years !== 1 ? 's' : '' %>, <%= bill.age.months %> month<%= bill.age.months !== 1 ? 's' : '' %>
+          </div>
+          <!-- Bill Card Header with Bill Number -->
+          <div class="bill-card-header">
+            <h3 style="color: #035106;"><%= bill["Bill Number"] %></h3>
+          </div>
+          
+          
+          <!-- Bill Details with compact layout -->
+          <div class="bill-info">
+            <div class="bill-info-item">
+              <span class="label">Name:</span>
+              <span class="value"><%= bill.Name %></span>
+            </div>
+            <div class="bill-info-item">
+              <span class="label">Date:</span>
+              <span class="value"><%= bill.Date %></span>
+            </div>
+            <div class="bill-info-item">
+              <span class="label">Phone Number:</span>
+              <span class="value"><%= bill["Phone Number"] %></span>
+            </div>
+            <div class="bill-info-item">
+              <span class="label">Item Type:</span>
+              <span class="value"><%= bill["Gold/Silver"] %></span>
+            </div>
+            <div class="bill-info-item">
+              <span class="label">Pledged Amount:</span>
+              <span class="value">₹<%= bill["Initial Pledged Amount"] %></span>
+            </div>
+            <div class="bill-info-item">
+              <span class="label">No. of Items:</span>
+              <span class="value"><%= bill["No_of_items"] %></span>
+            </div>
+            <button  style="background: linear-gradient(45deg,#035106,#1a691d); min-width: 100px; max-height: 50px;" onclick="window.location.href='/release?billNumber=<%= bill["Bill Number"] %>'">Release</button>
+            <button style="background: linear-gradient(45deg,#035106,#1a691d);  min-width: max-content; max-height: 50px;" onclick="window.location.href='/find-bill?billNumber=<%= bill["Bill Number"] %>'">View Details</button>
+          </div>          
+          <!-- Items Table -->
+          <div class="bill-card-content">
+            <strong>Items:</strong>
+            <% if (bill.Items && typeof bill.Items === 'object' && Object.keys(bill.Items).length > 0) { %>
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% Object.entries(bill.Items).forEach(([key, value]) => { %>
+                    <tr>
+                      <td><%= key %></td>
+                      <td><%= value %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            <% } else { %>
+              <p>No items data available</p>
+            <% } %>
+          </div>
+          
+          <!-- Transaction Histories (Principal Addition and Repayment) -->
+          <% if ((bill.Principle_Adding_His && typeof bill.Principle_Adding_His === 'object' && Object.keys(bill.Principle_Adding_His).length > 0) || 
+                 (bill["Repay History"] && typeof bill["Repay History"] === 'object' && Object.keys(bill["Repay History"]).length > 0)) { %>
+            <div class="transaction-histories-container">
+              <% if (bill.Principle_Adding_His && typeof bill.Principle_Adding_His === 'object' && Object.keys(bill.Principle_Adding_His).length > 0) { %>
+                <div class="transaction-history principal">
+                  <strong>Principal Addition History</strong>
+                  <table class="transaction-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% Object.entries(bill.Principle_Adding_His).forEach(([date, amount]) => { %>
+                        <tr>
+                          <td><%= date %></td>
+                          <td>₹<%= amount %></td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } %>
+              
+              <% if (bill["Repay History"] && typeof bill["Repay History"] === 'object' && Object.keys(bill["Repay History"]).length > 0) { %>
+                <div class="transaction-history repayment">
+                  <strong>Repayment History</strong>
+                  <table class="transaction-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% Object.entries(bill["Repay History"]).forEach(([date, amount]) => { %>
+                        <tr>
+                          <td><%= date %></td>
+                          <td>₹<%= amount %></td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } %>
+            </div>
+          <% } %>
+          
+          <!-- Action Buttons -->
+          
+        </div>
+      <% }); %>
+    <% } else if (locals.bills) { %>
+      <div class="no-results">
+        <h3>No bills found matching your criteria</h3>
+        <p>Try adjusting your filters to see more results.</p>
+      </div>
+    <% } %>
+  </div>
+  
+  <script>
+    // Toggle custom date fields based on age filter selection
+    function toggleCustomDateFields() {
+      const ageFilter = document.getElementById('ageFilter').value;
+      const customDateContainer = document.getElementById('customDateContainer');
+      
+      if (ageFilter === 'custom') {
+        customDateContainer.style.display = 'block';
+      } else {
+        customDateContainer.style.display = 'none';
+      }
+    }
+    
+    // Apply series filter immediately when changed
+    function applySeriesFilter() {
+      // If there are existing filters, submit the form with those filters
+      const seriesForm = document.getElementById('series-form');
+      // Copy all the other form values
+      const mainForm = document.querySelector('form[action="/insights"]');
+      const inputs = mainForm.querySelectorAll('select, input');
+      
+      inputs.forEach(input => {
+        if (input.name !== 'seriesType' && input.value) {
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.name = input.name;
+          hiddenInput.value = input.value;
+          seriesForm.appendChild(hiddenInput);
+        }
+      });
+      
+      seriesForm.submit();
+    }
+    
+    // Handle keyboard shortcut
+    document.addEventListener('keydown', function(event) {
+      // Check if Alt + H is pressed
+      if (event.altKey && event.key.toLowerCase() === 'h') {
+        event.preventDefault(); // Prevent default browser behavior
+        window.location.href = '/';
+      }
+    });
+    
+    // Function to export to Excel
+    document.getElementById('exportExcelBtn')?.addEventListener('click', function() {
+      window.location.href = '/export-excel?' + new URLSearchParams(window.location.search);
+    });
+  </script>
+  
+  <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+  </footer>
+</body>
+</html>

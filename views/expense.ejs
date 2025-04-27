@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Management</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .expense-container {
+      margin: 20px 0;
+    }
+    .expense-actions {
+      display: flex;
+      gap: 30px; 
+      margin-bottom: 20px;
+      margin-left: 100px; 
+    }
+    .action-button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .action-button:hover {
+      background-color: #45a049;
+    }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    input:checked + .toggle-slider {
+      background-color: #2196F3;
+    }
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+    .toggle-label {
+      margin-left: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .expense-form {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 4px;
+    }
+    .expense-item {
+      display: flex;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .expense-item select, .expense-item input {
+      margin-right: 10px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .remove-expense {
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .add-expense-btn {
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+}
+
+.modal-content {
+  background-color: white; /* White background */
+  margin: auto; /* Center the modal */
+  padding: 20px; /* Padding inside the modal */
+  border: 1px solid #888; /* Optional border */
+  width: 80%; /* Could be more or less depending on screen size */
+  max-width: 500px; /* Set a max width */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional shadow */
+}
+    .close {
+    position: absolute; /* Position it relative to the modal */
+    top: 2px; /* Adjust top position */
+    right: 15px; /* Position close button on right side */
+    font-size: 20px; /* Font size for the close button */
+    cursor: pointer; /* Change cursor on hover */
+    }
+    .close:hover {
+      color: black;
+    }
+    .success-modal {
+      display: none;
+      position: fixed;
+      z-index: 2;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+    }
+    .success-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .checkmark-circle {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+    }
+    .checkmark__circle {
+      stroke-dasharray: 166;
+      stroke-dashoffset: 166;
+      stroke-width: 2;
+      stroke-miterlimit: 10;
+      stroke: #7ac142;
+      fill: none;
+      animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+    }
+    .checkmark__check {
+      transform-origin: 50% 50%;
+      stroke-dasharray: 48;
+      stroke-dashoffset: 48;
+      stroke: #7ac142;
+      stroke-width: 3;
+      animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+    }
+    @keyframes stroke {
+      100% {
+        stroke-dashoffset: 0;
+      }
+    }
+    .hidden {
+      display: none;
+    }
+    .date-filter {
+      margin-bottom: 15px;
+    }
+    .date-filter label, .date-filter select {
+      margin-right: 10px;
+    }
+    .download-pdf {
+      background-color: #FF5722;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 15px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Expense Management</h1>
+    <a href="/reports" class="back-button">Back</a>
+    
+    <!-- Toggle Switch for Table Selection -->
+    <div class="toggle-container">
+      <label class="toggle-switch">
+        <input type="checkbox" id="tableToggle">
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label">S Series Expenses</span>
+    </div>
+    
+    <!-- Main Action Buttons -->
+    <div class="expense-actions">
+      <button class="action-button" id="addExpenseBtn">Add Expense</button>
+      <button class="action-button" id="viewExpensesBtn">View / Download Expense</button>
+      <button class="action-button" id="editExpenseBtn">Edit Expense</button>
+    </div>
+    
+    <!-- View Expense Section -->
+    <div id="viewExpensesSection" class="expense-section hidden">
+      <h2><gradient-wrapper>View Expenses</gradient-wrapper></h2>
+      <div class="date-filter">
+        <label for="expenseMonth">Month:</label>
+        <select id="expenseMonth">
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+        
+        <label for="expenseYear">Year:</label>
+        <select id="expenseYear">
+          <!-- Will be populated with JavaScript -->
+        </select>
+        
+        <button id="fetchExpensesBtn">Fetch Expenses</button>
+      </div>
+      
+      <div id="expenseTableContainer" class="hidden">
+        <h3>Expense Details</h3>
+        <table id="expenseTable">
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Date</th>
+              <th>Expense Type</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody">
+            <!-- Will be populated with JavaScript -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+              <td id="totalExpenseAmount"><strong>₹0.00</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+        
+        <button class="download-pdf" id="downloadPdfBtn">Download as PDF</button>
+      </div>
+    </div>
+    
+    <!-- Add Expense Section -->
+    <div id="addExpenseSection" class="expense-section hidden">
+      <h2><gradient-wrapper>Add New Expense</gradient-wrapper></h2>
+      <div class="expense-form">
+        <div>
+          <label for="expenseDate">Date:</label>
+          <input type="date" id="expenseDate" required>
+        </div>
+        
+        <h3>Expense Items</h3>
+        <div id="expenseItems">
+          <div class="expense-item">
+            <select class="expense-type">
+              <option value="">Select Expense Type</option>
+              <option value="Salary">Salary</option>
+              <option value="Rent">Rent</option>
+              <option value="EB">EB</option>
+              <option value="Stationary">Stationary</option>
+              <option value="Travel">Travel</option>
+              <option value="Postal">Postal/Courier</option>
+              <option value="Telephone">Telephone</option>
+              <option value="Pooja">Pooja</option>
+              <option value="Other">Other</option>
+            </select>
+            <input type="text" class="other-expense-type hidden" placeholder="Specify Expense Type">
+            <input type="number" class="expense-amount" placeholder="Amount" min="0" step="0.01">
+            <button class="remove-expense">Remove</button>
+          </div>
+        </div>
+        
+        <button class="add-expense-btn" id="addExpenseItemBtn">Add Another Expense Item</button>
+        <button class="action-button" id="previewExpenseBtn" style="margin-top: 20px;">Preview & Submit</button>
+      </div>
+    </div>
+    
+    <!-- Edit Expense Section -->
+    <div id="editExpenseSection" class="expense-section hidden">
+      <h2><gradient-wrapper>Edit Expense</gradient-wrapper></h2>
+      <div class="date-filter">
+        <label for="editExpenseMonth">Month:</label>
+        <select id="editExpenseMonth">
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+        
+        <label for="editExpenseYear">Year:</label>
+        <select id="editExpenseYear">
+          <!-- Will be populated with JavaScript -->
+        </select>
+        
+        <button id="fetchEditExpensesBtn">Fetch Expenses</button>
+      </div>
+      
+      <div id="editExpenseTableContainer" class="hidden">
+        <table id="editExpenseTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Total Amount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="editExpenseTableBody">
+            <!-- Will be populated with JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      
+      <div id="editExpenseFormContainer" class="hidden">
+        <h3>Edit Expense Items</h3>
+        <div class="expense-form">
+          <input type="hidden" id="editExpenseId">
+          <div>
+            <label for="editExpenseDate">Date:</label>
+            <input type="date" id="editExpenseDate" required>
+          </div>
+          
+          <div id="editExpenseItems">
+            <!-- Will be populated with JavaScript -->
+          </div>
+          
+          <button class="add-expense-btn" id="addEditExpenseItemBtn">Add Another Expense Item</button>
+          <button class="action-button" id="previewEditExpenseBtn" style="margin-top: 20px;">Preview & Update</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 style="margin-right: 40px;">Confirm Expense Details</h2>
+        <p style="margin-top: 24px;"><strong>Date:</strong> <span id="previewDate"></span></p>
+        
+        <h3>Expense Items:</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Expense Type</th>
+              <th>Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="previewTableBody">
+            <!-- Will be populated with JavaScript -->
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="text-align: right;"><strong>Total:</strong></td>
+              <td id="previewTotalAmount"><strong>₹0.00</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+        
+        <div style="margin-top: 20px; text-align: right;">
+          <button id="confirmExpenseBtn" class="action-button">Confirm & Submit</button>
+          <button class="close-modal action-button" style="background-color: #f44336;">Cancel</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="success-modal">
+      <div class="success-content">
+        <div class="checkmark-circle">
+          <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+          </svg>
+        </div>
+        <p id="successMessage">Operation completed successfully!</p>
+      </div>
+    </div>
+    
+    <!-- Back to Home Button -->
+    <button class="back-button-form" onclick="window.location.href='/'">Back to Home Page</button>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Initialize date fields with current date
+    const today = new Date();
+    const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const currentYear = today.getFullYear();
+    const formattedDate = today.toISOString().split('T')[0];
+    
+    // Set today's date for add expense form
+    document.getElementById('expenseDate').value = formattedDate;
+    
+
+    document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+    // Populate year dropdowns (current year + 5 previous years)
+    const yearDropdowns = [
+        document.getElementById('expenseYear'),
+        document.getElementById('editExpenseYear')
+    ];
+    
+    yearDropdowns.forEach(dropdown => {
+        for (let year = currentYear; year >= currentYear - 5; year--) {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year;
+          dropdown.appendChild(option);
+        }
+    });
+    
+    // Set current month and year in dropdowns
+    document.getElementById('expenseMonth').value = currentMonth;
+    document.getElementById('editExpenseMonth').value = currentMonth;
+    
+    // Section visibility functions
+    const hideAllSections = () => {
+        document.querySelectorAll('.expense-section').forEach(section => {
+          section.classList.add('hidden');
+        });
+    };
+    
+    // Button click handlers
+    document.getElementById('viewExpensesBtn').addEventListener('click', () => {
+        hideAllSections();
+        document.getElementById('viewExpensesSection').classList.remove('hidden');
+    });
+    
+    document.getElementById('addExpenseBtn').addEventListener('click', () => {
+        hideAllSections();
+        document.getElementById('addExpenseSection').classList.remove('hidden');
+    });
+    
+    document.getElementById('editExpenseBtn').addEventListener('click', () => {
+        hideAllSections();
+        document.getElementById('editExpenseSection').classList.remove('hidden');
+    });
+    
+    // Fetch expenses for viewing
+    document.getElementById('fetchExpensesBtn').addEventListener('click', () => {
+        const month = document.getElementById('expenseMonth').value;
+        const year = document.getElementById('expenseYear').value;
+        const useSecondaryTable = document.getElementById('tableToggle').checked;
+        
+        fetchExpenses(month, year, useSecondaryTable, 'view');
+    });
+    
+    // Fetch expenses for editing
+    document.getElementById('fetchEditExpensesBtn').addEventListener('click', () => {
+        const month = document.getElementById('editExpenseMonth').value;
+        const year = document.getElementById('editExpenseYear').value;
+        const useSecondaryTable = document.getElementById('tableToggle').checked;
+        
+        fetchExpenses(month, year, useSecondaryTable, 'edit');
+    });
+    
+    // Function to fetch expenses
+    function fetchExpenses(month, year, useSecondaryTable, mode) {
+        fetch(`/get-expenses?month=${month}&year=${year}&useSecondaryTable=${useSecondaryTable}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+              if (mode === 'view') {
+                  displayExpenses(data.expenses);
+              } else {
+                  displayExpensesForEdit(data.expenses);
+              }
+            } else {
+              alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to fetch expenses');
+        });
+    }
+    
+    // Display expenses in view mode
+    function displayExpenses(expenses) {
+        const tableBody = document.getElementById('expenseTableBody');
+        tableBody.innerHTML = '';
+        
+        let totalAmount = 0;
+        let rowCounter = 1;
+        
+        expenses.forEach(expense => {
+          const expenseDate = new Date(expense.ExpenseDate).toLocaleDateString();
+          const expenseDetails = JSON.parse(expense.ExpenseDetails);
+          
+          Object.entries(expenseDetails).forEach(([type, amount]) => {
+              const row = document.createElement('tr');
+              
+              const serialCell = document.createElement('td');
+              serialCell.textContent = rowCounter++;
+              row.appendChild(serialCell);
+              
+              const dateCell = document.createElement('td');
+              dateCell.textContent = expenseDate;
+              row.appendChild(dateCell);
+              
+              const typeCell = document.createElement('td');
+              typeCell.textContent = type;
+              row.appendChild(typeCell);
+              
+              const amountCell = document.createElement('td');
+              amountCell.textContent = `₹${parseFloat(amount).toFixed(2)}`;
+              row.appendChild(amountCell);
+              
+              tableBody.appendChild(row);
+              totalAmount += parseFloat(amount);
+          });
+        });
+        
+        document.getElementById('totalExpenseAmount').textContent = `₹${totalAmount.toFixed(2)}`;
+        document.getElementById('expenseTableContainer').classList.remove('hidden');
+    }
+    
+    // Display expenses for editing
+    function displayExpensesForEdit(expenses) {
+        const tableBody = document.getElementById('editExpenseTableBody');
+        tableBody.innerHTML = '';
+        
+        expenses.forEach(expense => {
+          const row = document.createElement('tr');
+          
+          const dateCell = document.createElement('td');
+          dateCell.textContent = new Date(expense.ExpenseDate).toLocaleDateString();
+          row.appendChild(dateCell);
+          
+          const amountCell = document.createElement('td');
+          amountCell.textContent = `₹${parseFloat(expense.TotalAmount).toFixed(2)}`;
+          row.appendChild(amountCell);
+          
+          const actionCell = document.createElement('td');
+          const editButton = document.createElement('button');
+          editButton.textContent = 'Edit';
+          editButton.className = 'action-button';
+          editButton.style.margin = '0';
+          editButton.addEventListener('click', () => loadExpenseForEdit(expense.id));
+          actionCell.appendChild(editButton);
+          row.appendChild(actionCell);
+          
+          tableBody.appendChild(row);
+        });
+        
+        document.getElementById('editExpenseTableContainer').classList.remove('hidden');
+    }
+    
+    // Load expense for editing
+    function loadExpenseForEdit(expenseId) {
+        const useSecondaryTable = document.getElementById('tableToggle').checked;
+        
+        fetch(`/get-expense/${expenseId}?useSecondaryTable=${useSecondaryTable}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+              populateEditForm(data.expense);
+            } else {
+              alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load expense details');
+        });
+    }
+    
+    // Populate edit form with expense details
+    function populateEditForm(expense) {
+        document.getElementById('editExpenseId').value = expense.id;
+        document.getElementById('editExpenseDate').value = expense.ExpenseDate.split('T')[0];
+        
+        const expenseDetails = JSON.parse(expense.ExpenseDetails);
+        const editExpenseItems = document.getElementById('editExpenseItems');
+        editExpenseItems.innerHTML = '';
+        
+        Object.entries(expenseDetails).forEach(([type, amount], index) => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'expense-item';
+          
+          const typeSelect = document.createElement('select');
+          typeSelect.className = 'expense-type';
+          
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = 'Select Expense Type';
+          typeSelect.appendChild(defaultOption);
+          
+          const expenseTypes = ['Salary', 'Rent', 'EB', 'Stationary', 'Travel', 'Postal', 'Telephone', 'Pooja', 'Other'];
+          
+          expenseTypes.forEach(expType => {
+              const option = document.createElement('option');
+              option.value = expType;
+              option.textContent = expType;
+              typeSelect.appendChild(option);
+          });
+          
+          // Check if this is a standard expense type or "Other"
+          const isStandardType = expenseTypes.includes(type);
+          typeSelect.value = isStandardType ? type : 'Other';
+          
+          const otherTypeInput = document.createElement('input');
+          otherTypeInput.type = 'text';
+          otherTypeInput.className = 'other-expense-type';
+          otherTypeInput.placeholder = 'Specify Expense Type';
+          
+          if (!isStandardType) {
+              otherTypeInput.value = type;
+              otherTypeInput.classList.remove('hidden');
+          } else {
+              otherTypeInput.classList.add('hidden');
+          }
+          
+          const amountInput = document.createElement('input');
+          amountInput.type = 'number';
+          amountInput.className = 'expense-amount';
+          amountInput.placeholder = 'Amount';
+          amountInput.min = '0';
+          amountInput.step = '0.01';
+          amountInput.value = amount;
+          
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'remove-expense';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', function() {
+              editExpenseItems.removeChild(itemDiv);
+          });
+          
+          // Add event listener for expense type change
+          typeSelect.addEventListener('change', function() {
+              if (this.value === 'Other') {
+                otherTypeInput.classList.remove('hidden');
+              } else {
+                otherTypeInput.classList.add('hidden');
+              }
+          });
+          
+          // Append all elements to the item div
+          itemDiv.appendChild(typeSelect);
+          itemDiv.appendChild(otherTypeInput);
+          itemDiv.appendChild(amountInput);
+          itemDiv.appendChild(removeBtn);
+          
+          editExpenseItems.appendChild(itemDiv);
+        });
+        
+        // Show edit form
+        document.getElementById('editExpenseFormContainer').classList.remove('hidden');
+    }
+    
+    // Download PDF functionality
+    document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+        const month = document.getElementById('expenseMonth').value;
+        const year = document.getElementById('expenseYear').value;
+        const useSecondaryTable = document.getElementById('tableToggle').checked;
+        
+        // Create URL for PDF download
+        const pdfUrl = `/generate-expense-pdf?month=${month}&year=${year}&useSecondaryTable=${useSecondaryTable}`;
+        
+        // Open in new window or trigger download
+        window.open(pdfUrl, '_blank');
+    });
+    
+    // Modal handling
+    const previewModal = document.getElementById('previewModal');
+    const closeButtons = document.querySelectorAll('.close, .close-modal');
+    
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          previewModal.style.display = 'none';
+        });
+    });
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === previewModal) {
+          previewModal.style.display = 'none';
+        }
+    });
+    
+    // Add expense item event handler
+    document.getElementById('addExpenseItemBtn').addEventListener('click', () => {
+        addExpenseItemRow('expenseItems');
+    });
+    
+    // Add edit expense item event handler
+    document.getElementById('addEditExpenseItemBtn').addEventListener('click', () => {
+        addExpenseItemRow('editExpenseItems');
+    });
+    
+    // Function to add a new expense item row
+    function addExpenseItemRow(containerId) {
+        const container = document.getElementById(containerId);
+        const newItem = document.createElement('div');
+        newItem.className = 'expense-item';
+        
+        // Create expense type select
+        const typeSelect = document.createElement('select');
+        typeSelect.className = 'expense-type';
+        
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select Expense Type';
+        typeSelect.appendChild(defaultOption);
+        
+        const expenseTypes = ['Salary', 'Rent', 'EB', 'Stationary', 'Travel', 'Postal', 'Telephone', 'Pooja', 'Other'];
+        
+        expenseTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type;
+          typeSelect.appendChild(option);
+        });
+        
+        // Create other expense type input
+        const otherTypeInput = document.createElement('input');
+        otherTypeInput.type = 'text';
+        otherTypeInput.className = 'other-expense-type hidden';
+        otherTypeInput.placeholder = 'Specify Expense Type';
+        
+        // Create amount input
+        const amountInput = document.createElement('input');
+        amountInput.type = 'number';
+        amountInput.className = 'expense-amount';
+        amountInput.placeholder = 'Amount';
+        amountInput.min = '0';
+        amountInput.step = '0.01';
+        
+        // Create remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-expense';
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', function() {
+          container.removeChild(newItem);
+        });
+        
+        // Add event listener for expense type change
+        typeSelect.addEventListener('change', function() {
+          if (this.value === 'Other') {
+              otherTypeInput.classList.remove('hidden');
+          } else {
+              otherTypeInput.classList.add('hidden');
+          }
+        });
+        
+        // Append all elements to the new item
+        newItem.appendChild(typeSelect);
+        newItem.appendChild(otherTypeInput);
+        newItem.appendChild(amountInput);
+        newItem.appendChild(removeBtn);
+        
+        // Append the new item to the container
+        container.appendChild(newItem);
+    }
+    
+    // Preview expenses before submission
+  // Preview expenses before submission
+document.getElementById('previewExpenseBtn').addEventListener('click', () => {
+    const expenseDate = document.getElementById('expenseDate').value;
+    const expenseItems = document.querySelectorAll('#expenseItems .expense-item');
+    const useSecondaryTable = document.getElementById('tableToggle').checked;
+    
+    if (!expenseDate) {
+      alert('Please select a date');
+      return;
+    }
+    
+    let valid = true;
+    let expenseDetails = {};
+    let totalAmount = 0;
+    
+    // Validate and collect expense items
+    expenseItems.forEach((item, index) => {
+      const typeSelect = item.querySelector('.expense-type');
+      const otherTypeInput = item.querySelector('.other-expense-type');
+      const amountInput = item.querySelector('.expense-amount');
+      
+      let expenseType = typeSelect.value;
+      const amount = amountInput.value;
+      
+      if (expenseType === 'Other') {
+          expenseType = otherTypeInput.value;
+      }
+      
+      if (!expenseType || !amount) {
+          valid = false;
+          return;
+      }
+      
+      // Add to expense details
+      expenseDetails[expenseType] = parseFloat(amount);
+      totalAmount += parseFloat(amount);
+    });
+    
+    if (!valid || Object.keys(expenseDetails).length === 0) {
+      alert('Please fill all expense details correctly');
+      return;
+    }
+    
+    // Show preview modal
+    const previewModal = document.getElementById('previewModal');
+    document.getElementById('previewDate').textContent = new Date(expenseDate).toLocaleDateString();
+    
+    const previewTableBody = document.getElementById('previewTableBody');
+    previewTableBody.innerHTML = '';
+    
+    // Add expense items to preview table
+    Object.entries(expenseDetails).forEach(([type, amount], index) => {
+      const row = document.createElement('tr');
+      
+      const serialCell = document.createElement('td');
+      serialCell.textContent = index + 1;
+      row.appendChild(serialCell);
+      
+      const typeCell = document.createElement('td');
+      typeCell.textContent = type;
+      row.appendChild(typeCell);
+      
+      const amountCell = document.createElement('td');
+      amountCell.textContent = `₹${parseFloat(amount).toFixed(2)}`;
+      row.appendChild(amountCell);
+      
+      previewTableBody.appendChild(row);
+    });
+    
+    // Remove any existing table indicator
+    const existingIndicator = previewModal.querySelector('.table-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    // Add table indication
+    const tableIndicator = document.createElement('div');
+    tableIndicator.style.marginTop = '10px';
+    tableIndicator.style.fontWeight = 'bold';
+    tableIndicator.className = 'table-indicator';
+    tableIndicator.textContent = `Table: ${useSecondaryTable ? 'S_Expenses' : 'Expenses'}`;
+    previewModal.querySelector('.modal-content').appendChild(tableIndicator);
+    
+    document.getElementById('previewTotalAmount').textContent = `₹${totalAmount.toFixed(2)}`;
+    previewModal.style.display = 'flex'; // Change to flex for better centering
+    
+    // Set up confirm button with data
+    const confirmBtn = document.getElementById('confirmExpenseBtn');
+    confirmBtn.onclick = function() {
+      submitExpense(expenseDate, expenseDetails, totalAmount, useSecondaryTable);
+    };
+});
+
+// Preview edit expenses before submission
+document.getElementById('previewEditExpenseBtn').addEventListener('click', () => {
+    const expenseId = document.getElementById('editExpenseId').value;
+    const expenseDate = document.getElementById('editExpenseDate').value;
+    const expenseItems = document.querySelectorAll('#editExpenseItems .expense-item');
+    const useSecondaryTable = document.getElementById('tableToggle').checked;
+    
+    if (!expenseDate) {
+      alert('Please select a date');
+      return;
+    }
+    
+    let valid = true;
+    let expenseDetails = {};
+    let totalAmount = 0;
+    
+    // Validate and collect expense items
+    expenseItems.forEach((item, index) => {
+      const typeSelect = item.querySelector('.expense-type');
+      const otherTypeInput = item.querySelector('.other-expense-type');
+      const amountInput = item.querySelector('.expense-amount');
+      
+      let expenseType = typeSelect.value;
+      const amount = amountInput.value;
+      
+      if (expenseType === 'Other') {
+          expenseType = otherTypeInput.value;
+      }
+      
+      if (!expenseType || !amount) {
+          valid = false;
+          return;
+      }
+      
+      // Add to expense details
+      expenseDetails[expenseType] = parseFloat(amount);
+      totalAmount += parseFloat(amount);
+    });
+    
+    if (!valid || Object.keys(expenseDetails).length === 0) {
+      alert('Please fill all expense details correctly');
+      return;
+    }
+    
+    // Show preview modal
+    const previewModal = document.getElementById('previewModal');
+    document.getElementById('previewDate').textContent = new Date(expenseDate).toLocaleDateString();
+    
+    const previewTableBody = document.getElementById('previewTableBody');
+    previewTableBody.innerHTML = '';
+    
+    // Add expense items to preview table
+    Object.entries(expenseDetails).forEach(([type, amount], index) => {
+      const row = document.createElement('tr');
+      
+      const serialCell = document.createElement('td');
+      serialCell.textContent = index + 1;
+      row.appendChild(serialCell);
+      
+      const typeCell = document.createElement('td');
+      typeCell.textContent = type;
+      row.appendChild(typeCell);
+      
+      const amountCell = document.createElement('td');
+      amountCell.textContent = `₹${parseFloat(amount).toFixed(2)}`;
+      row.appendChild(amountCell);
+      
+      previewTableBody.appendChild(row);
+    });
+    
+    // Remove any existing table indicator
+    const existingIndicator = previewModal.querySelector('.table-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    // Add table indication
+    const tableIndicator = document.createElement('div');
+    tableIndicator.style.marginTop = '10px';
+    tableIndicator.style.fontWeight = 'bold';
+    tableIndicator.className = 'table-indicator';
+    tableIndicator.textContent = `Table: ${useSecondaryTable ? 'S_Expenses' : 'Expenses'}`;
+    previewModal.querySelector('.modal-content').appendChild(tableIndicator);
+    
+    document.getElementById('previewTotalAmount').textContent = `₹${totalAmount.toFixed(2)}`;
+    previewModal.style.display = 'flex'; // Change to flex for better centering
+    
+    // Set up confirm button with data
+    const confirmBtn = document.getElementById('confirmExpenseBtn');
+    confirmBtn.onclick = function() {
+      updateExpense(expenseId, expenseDate, expenseDetails, totalAmount, useSecondaryTable);
+    };
+});
+    // Function to submit new expense
+    function submitExpense(expenseDate, expenseDetails, totalAmount, useSecondaryTable) {
+        fetch('/add-expense', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                expenseDate,
+                expenseDetails,
+                totalAmount,
+                useSecondaryTable
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close preview modal
+                document.getElementById('previewModal').style.display = 'none';
+                
+                // Show success message
+                const successModal = document.getElementById('successModal');
+                document.getElementById('successMessage').textContent = data.message;
+                successModal.style.display = 'flex';
+                
+                // Reset form
+                document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+                document.getElementById('expenseItems').innerHTML = '';
+                addExpenseItemRow('expenseItems');
+                
+                // Hide success modal after 2 seconds
+                setTimeout(() => {
+                    successModal.style.display = 'none';
+                }, 2000);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to submit expense');
+        });
+    }
+    
+    // Function to update existing expense
+    function updateExpense(expenseId, expenseDate, expenseDetails, totalAmount, useSecondaryTable) {
+        fetch(`/update-expense/${expenseId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                expenseDate,
+                expenseDetails,
+                totalAmount,
+                useSecondaryTable
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close preview modal
+                document.getElementById('previewModal').style.display = 'none';
+                
+                // Show success message
+                const successModal = document.getElementById('successModal');
+                document.getElementById('successMessage').textContent = data.message;
+                successModal.style.display = 'flex';
+                
+                // Reset edit form and show expenses list
+                document.getElementById('editExpenseFormContainer').classList.add('hidden');
+                
+                // Refresh expense list
+                const month = document.getElementById('editExpenseMonth').value;
+                const year = document.getElementById('editExpenseYear').value;
+                fetchExpenses(month, year, useSecondaryTable, 'edit');
+                
+                // Hide success modal after 2 seconds
+                setTimeout(() => {
+                    successModal.style.display = 'none';
+                }, 2000);
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update expense');
+        });
+    }
+    
+    // Initialize with first expense item
+    if (document.querySelectorAll('#expenseItems .expense-item').length === 0) {
+        addExpenseItemRow('expenseItems');
+    }
+});
+  </script>
+  <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ledger</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .ledger-form {
+      background-color: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .date-range {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .date-range > div {
+      flex: 1;
+    }
+    
+    .series-search {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .series-search > div {
+      flex: 1;
+    }
+    
+    .preset-buttons {
+      margin: 15px 0;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .preset-button {
+      padding: 8px 12px;
+      background-color: #e0e0e0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .preset-button:hover {
+      background-color: #d0d0d0;
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin: 15px 0;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+      margin-right: 10px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    .search-options {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .search-type {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .action-button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .download-button {
+      background-color: #2196F3;
+    }
+    
+    .back-button {
+      background-color: #f44336;
+      color: white;
+      padding: 8px 15px;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      min-width: 1200px; /* Ensures horizontal scrolling when needed */
+    }
+    
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    
+    th, td {
+      padding: 12px;
+      text-align: left;
+    }
+    
+    th {
+      background-color: #f2f2f2;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .property-list {
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+    }
+    
+    .property-list li {
+      margin-bottom: 5px;
+    }
+    
+    .combined-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .combined-info div {
+      margin-bottom: 3px;
+    }
+    
+    .radio-options {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+      justify-content: center;
+      padding: 15px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .radio-option {
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding: 12px 25px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .radio-option:hover {
+      background: #e9ecef;
+    }
+    
+    .radio-option input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+    }
+    
+    .radio-option input[type="radio"] + span {
+      padding-left: 25px;
+      position: relative;
+      font-weight: 500;
+      color: #495057;
+    }
+    
+    .radio-option input[type="radio"] + span:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      border: 2px solid #116a1e;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    
+    .radio-option input[type="radio"]:checked + span:before {
+      border-color: #116a1e;
+      background: #116a1e;
+    }
+    
+    .radio-option input[type="radio"]:checked + span:after {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+    
+    .radio-option input[type="radio"]:checked + span {
+      color: #116a1e;
+    }
+    
+    /* Enhanced Form Inputs */
+    .form-group input[type="date"],
+    .form-group input[type="text"],
+    .form-group input[type="number"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background-color: #ffffff;
+    }
+    
+    .form-group input:focus {
+      border-color: #116a1e;
+      box-shadow: 0 0 0 3px rgba(17, 106, 30, 0.1);
+      outline: none;
+    }
+    
+    /* Enhanced Date Range Section */
+    .date-range {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    
+    /* Enhanced Series Search Section */
+    .series-search {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    /* Enhanced Preset Buttons */
+    .preset-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+    }
+    
+    .preset-button {
+      padding: 12px 15px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .preset-button:hover {
+      background-color: #116a1e;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(17, 106, 30, 0.2);
+    }
+    
+    /* Enhanced Form Labels */
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+    
+    /* Enhanced Toggle Switch */
+    .toggle-container {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin: 20px 0;
+    }
+    
+    .toggle-switch {
+      width: 65px;
+      height: 36px;
+    }
+    
+    .slider:before {
+      height: 28px;
+      width: 28px;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(29px);
+    }
+    
+    #toggleLabel {
+      font-weight: 500;
+      color: #2c3e50;
+      margin-left: 15px;
+    }
+    
+    /* Enhanced Action Buttons */
+    .action-buttons-container {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .action-button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .action-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Primary Action Button */
+    button[type="submit"].action-button {
+      background: linear-gradient(45deg, #116a1e, #1a8f2d);
+      color: white;
+    }
+    
+    /* Download Button */
+    .download-button {
+      background: linear-gradient(45deg, #1565C0, #1976D2);
+      color: white;
+    }
+    
+    /* Enhanced Search Options Container */
+    .search-options {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-top: 25px;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #dateSearch, #seriesSearch {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Responsive Improvements */
+    @media (max-width: 768px) {
+      .date-range, .series-search {
+        grid-template-columns: 1fr;
+      }
+      
+      .preset-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Ledger</h1>
+    <a href="/reports" class="back-button">Back</a>
+    
+    <div class="ledger-form">
+      <form id="ledgerForm">
+        <div class="search-type">
+          <div class="radio-options">
+            <label class="radio-option">
+              <input type="radio" name="searchType" value="date" checked>
+              <span>Search by Date</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="searchType" value="series">
+              <span>Search by Series</span>
+            </label>
+          </div>
+        </div>
+        <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" id="tableToggle">
+              <span class="slider"></span>
+            </label>
+            <span id="toggleLabel">Standard</span>
+            <p style="margin-left: 30px; color: #c82333;">Switch / Click here to search in S Series</p>
+  
+          </div>
+        <div id="dateSearch" class="search-options">
+          <div class="date-range">
+            <div class="form-group">
+              <label for="fromDate">From Date</label>
+              <input type="date" id="fromDate" name="fromDate">
+            </div>
+            
+            <div class="form-group">
+              <label for="toDate">To Date</label>
+              <input type="date" id="toDate" name="toDate">
+            </div>
+          </div>
+          
+          <div class="preset-buttons">
+            <button type="button" class="preset-button" data-preset="last-30-days">Last 30 Days</button>
+            <button type="button" class="preset-button" data-preset="last-3-months">Last 3 Months</button>
+            <button type="button" class="preset-button" data-preset="last-6-months">Last 6 Months</button>
+            <button type="button" class="preset-button" data-preset="current-fy">Current FY</button>
+            <button type="button" class="preset-button" data-preset="previous-fy">Previous FY</button>
+            <button type="button" class="preset-button" data-preset="year-to-date">Year to Date</button>
+            <button type="button" class="preset-button" data-preset="previous-calendar-year">Previous Year</button>
+          </div>
+        </div>
+        
+        <div id="seriesSearch" class="search-options" style="display: none;">
+          <div class="series-search">
+            <div class="form-group">
+              <label for="seriesName">Series</label>
+              <input type="text" id="seriesName" name="seriesName" placeholder="Enter series (e.g., A, B, C)">
+            </div>
+            
+            <div class="form-group">
+              <label for="pledgeNoFrom">From Pledge No</label>
+              <input type="number" id="pledgeNoFrom" name="pledgeNoFrom" placeholder="Start number">
+            </div>
+            
+            <div class="form-group">
+              <label for="pledgeNoTo">To Pledge No</label>
+              <input type="number" id="pledgeNoTo" name="pledgeNoTo" placeholder="End number">
+            </div>
+          </div>
+        </div>
+        
+        <div class="action-buttons-container">
+          <button type="submit" class="action-button">Fetch Data</button>
+          <button type="button" id="downloadExcel" class="action-button download-button" style="display: none;">Download Excel</button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="table-container" id="ledgerTableContainer" style="display: none;">
+      <table id="ledgerTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Series</th>
+            <th>Pledge No</th>
+            <th>Name and Address</th>
+            <th>Principal Amount</th>
+            <th>Interest (%)</th>
+            <th>Item Description</th>
+            <th>Weights</th>
+            <th>Value</th>
+            <th>Time Agreed (months)</th>
+            <th>Release Date</th>
+            <th>H Form No</th>
+            <th>Principal</th>
+            <th>Interest Amount</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTableBody">
+          <!-- Data will be populated here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default dates
+      const today = new Date();
+      document.getElementById('toDate').value = today.toISOString().split('T')[0];
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      // Toggle search type
+      const searchTypeRadios = document.querySelectorAll('input[name="searchType"]');
+      const dateSearchDiv = document.getElementById('dateSearch');
+      const seriesSearchDiv = document.getElementById('seriesSearch');
+      
+      searchTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          if (this.value === 'date') {
+            dateSearchDiv.style.display = 'block';
+            seriesSearchDiv.style.display = 'none';
+          } else if (this.value === 'series') {
+            dateSearchDiv.style.display = 'none';
+            seriesSearchDiv.style.display = 'block';
+          }
+        });
+      });
+      
+      // Toggle switch for Ledger / S_Ledger
+      const tableToggle = document.getElementById('tableToggle');
+      const toggleLabel = document.getElementById('toggleLabel');
+      
+      tableToggle.addEventListener('change', function() {
+        toggleLabel.textContent = this.checked ? 'S Series' : 'Standard';
+      });
+      
+      // Preset date buttons
+      document.querySelectorAll('.preset-button').forEach(button => {
+        button.addEventListener('click', function() {
+          const preset = this.getAttribute('data-preset');
+          setPresetDates(preset);
+        });
+      });
+      
+      // Form submission
+      document.getElementById('ledgerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetchLedgerData();
+      });
+      
+      // Download Excel button
+      document.getElementById('downloadExcel').addEventListener('click', function() {
+        downloadExcel();
+      });
+    });
+    
+    // Set dates based on preset buttons
+    function setPresetDates(preset) {
+      const today = new Date();
+      const fromDateInput = document.getElementById('fromDate');
+      const toDateInput = document.getElementById('toDate');
+      
+      // Set today as the end date by default
+      toDateInput.value = today.toISOString().split('T')[0];
+      
+      switch(preset) {
+        case 'current-fy':
+          // April 1st of current year or previous year based on current month
+          const currentYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+          fromDateInput.value = `${currentYear}-04-01`;
+          break;
+          
+        case 'previous-fy':
+          // April 1st of previous financial year
+          const prevFYStart = today.getMonth() >= 3 ? today.getFullYear() - 1 : today.getFullYear() - 2;
+          const prevFYEnd = prevFYStart + 1;
+          fromDateInput.value = `${prevFYStart}-04-01`;
+          toDateInput.value = `${prevFYEnd}-03-31`;
+          break;
+          
+        case 'last-3-months':
+          const threeMonthsAgo = new Date();
+          threeMonthsAgo.setMonth(today.getMonth() - 3);
+          fromDateInput.value = threeMonthsAgo.toISOString().split('T')[0];
+          break;
+          
+        case 'last-6-months':
+          const sixMonthsAgo = new Date();
+          sixMonthsAgo.setMonth(today.getMonth() - 6);
+          fromDateInput.value = sixMonthsAgo.toISOString().split('T')[0];
+          break;
+          
+        case 'last-30-days':
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(today.getDate() - 30);
+          fromDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+          break;
+
+        case 'year-to-date':
+          const thisYear = today.getFullYear();
+          fromDateInput.value = `${thisYear}-01-01`;
+          break;
+
+        case 'previous-calendar-year':
+          // Previous year January 1st to December 31st
+          const prevYear = today.getFullYear() - 1;
+          fromDateInput.value = `${prevYear}-01-01`;
+          toDateInput.value = `${prevYear}-12-31`;
+          break;
+      }
+    }
+    
+    // Keyboard shortcut to navigate home
+    document.addEventListener('keydown', function(event) {
+      // Check if Alt + H is pressed
+      if (event.altKey && event.key.toLowerCase() === 'h') {
+        event.preventDefault(); // Prevent default browser behavior
+        window.location.href = '/';
+      }
+    });
+    
+    // Parse JSON strings safely
+    function parseJsonSafely(jsonString) {
+      try {
+        return JSON.parse(jsonString);
+      } catch (e) {
+        return null;
+      }
+    }
+    
+    // Format object properties like item_description and weights
+    function formatJsonProperty(jsonStr) {
+      const details = parseJsonSafely(jsonStr);
+      if (!details) return jsonStr || '';
+      
+      let html = '<ul class="property-list">';
+      for (const [key, value] of Object.entries(details)) {
+        html += `<li><strong>${key}:</strong> ${value}</li>`;
+      }
+      html += '</ul>';
+      return html;
+    }
+    
+    // Format customer information
+    function formatCustomerInfo(name, fatherSpouseName, townCity) {
+      let html = '<div class="combined-info">';
+      
+      if (name) {
+        html += `<div><strong>Name:</strong> ${name}</div>`;
+      }
+      
+      if (fatherSpouseName) {
+        html += `<div><strong>Father/Spouse:</strong> ${fatherSpouseName}</div>`;
+      }
+      
+      if (townCity) {
+        html += `<div><strong>Town/City:</strong> ${townCity}</div>`;
+      }
+      
+      html += '</div>';
+      return html;
+    }
+    
+    // Fetch data from the server
+    function fetchLedgerData() {
+      const isSpecial = document.getElementById('tableToggle').checked;
+      const searchType = document.querySelector('input[name="searchType"]:checked').value;
+      
+      let queryParams = `isSpecial=${isSpecial}`;
+      
+      if (searchType === 'date') {
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        
+        if (!fromDate || !toDate) {
+          alert('Both from and to dates are required');
+          return;
+        }
+        
+        queryParams += `&searchType=date&fromDate=${fromDate}&toDate=${toDate}`;
+      } else if (searchType === 'series') {
+        const seriesName = document.getElementById('seriesName').value;
+        const pledgeNoFrom = document.getElementById('pledgeNoFrom').value;
+        const pledgeNoTo = document.getElementById('pledgeNoTo').value;
+        
+        if (!seriesName) {
+          alert('Series name is required');
+          return;
+        }
+        
+        queryParams += `&searchType=series&seriesName=${seriesName}`;
+        
+        if (pledgeNoFrom) queryParams += `&pledgeNoFrom=${pledgeNoFrom}`;
+        if (pledgeNoTo) queryParams += `&pledgeNoTo=${pledgeNoTo}`;
+      }
+      
+      fetch(`/ledger-data?${queryParams}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayLedgerData(data.records);
+            document.getElementById('downloadExcel').style.display = 'inline-block';
+          } else {
+            alert('Error fetching data: ' + data.error);
+            document.getElementById('downloadExcel').style.display = 'none';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error fetching data. Please try again.');
+          document.getElementById('downloadExcel').style.display = 'none';
+        });
+    }
+
+    // Display data in the table
+    function displayLedgerData(records) {
+      const tableContainer = document.getElementById('ledgerTableContainer');
+      const tableBody = document.getElementById('ledgerTableBody');
+      tableBody.innerHTML = '';
+      
+      if (records.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="14">No records found</td></tr>';
+        tableContainer.style.display = 'block';
+        document.getElementById('downloadExcel').style.display = 'none';
+        return;
+      }
+      
+      // Sort records by date
+      records.sort((a, b) => new Date(a.pledge_date) - new Date(b.pledge_date));
+      
+      records.forEach(record => {
+        const tr = document.createElement('tr');
+        
+        // Format date for display
+        let formattedDate = '';
+        if (record.pledge_date) {
+          const dateObj = new Date(record.pledge_date);
+          formattedDate = dateObj.toLocaleDateString('en-GB');
+        }
+        
+        // Format release date if it exists
+        let formattedReleaseDate = '';
+        if (record.release_date) {
+          const releaseDateObj = new Date(record.release_date);
+          formattedReleaseDate = releaseDateObj.toLocaleDateString('en-GB');
+        }
+        
+        // Format customer information
+        const customerInfo = formatCustomerInfo(
+          record.name,
+          record.father_spouse_name,
+          record.town_city
+        );
+        
+        // Format item description and weights
+        const itemDescription = formatJsonProperty(record.item_description);
+        const weights = formatJsonProperty(record.weights);
+        
+        tr.innerHTML = `
+          <td>${formattedDate}</td>
+          <td>${record.series || ''}</td>
+          <td>${record.pledge_no || ''}</td>
+          <td>${customerInfo}</td>
+          <td>${(record.principal_amount || 0).toFixed(2)}</td>
+          <td>${record.interest || ''}</td>
+          <td>${itemDescription}</td>
+          <td>${weights}</td>
+          <td>${(record.value || 0).toFixed(2)}</td>
+          <td>${record.time_agreed || ''}</td>
+          <td>${formattedReleaseDate}</td>
+          <td>${record.h_from_no || ''}</td>
+          <td>${(record.principal || 0).toFixed(2)}</td>
+          <td>${(record.interest_amount || 0).toFixed(2)}</td>
+        `;
+        
+        tableBody.appendChild(tr);
+      });
+      
+      tableContainer.style.display = 'block';
+      
+      // Store data for Excel download
+      window.ledgerData = {
+        records: records
+      };
+    }
+    
+    // Download data as Excel
+    function downloadExcel() {
+      const isSpecial = document.getElementById('tableToggle').checked;
+      const searchType = document.querySelector('input[name="searchType"]:checked').value;
+      
+      let queryParams = `isSpecial=${isSpecial}&searchType=${searchType}`;
+      
+      if (searchType === 'date') {
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        queryParams += `&fromDate=${fromDate}&toDate=${toDate}`;
+      } else if (searchType === 'series') {
+        const seriesName = document.getElementById('seriesName').value;
+        const pledgeNoFrom = document.getElementById('pledgeNoFrom').value;
+        const pledgeNoTo = document.getElementById('pledgeNoTo').value;
+        
+        queryParams += `&seriesName=${seriesName}`;
+        if (pledgeNoFrom) queryParams += `&pledgeNoFrom=${pledgeNoFrom}`;
+        if (pledgeNoTo) queryParams += `&pledgeNoTo=${pledgeNoTo}`;
+      }
+      
+      window.location.href = `/ledger-excel?${queryParams}`;
+    }
+  </script>
+  <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+  </footer>
+</body>
+</html>

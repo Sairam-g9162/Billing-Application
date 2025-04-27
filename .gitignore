@@ -3,3 +3,4 @@ images/
 /database/bill_management.db
 /backup
 /package.json
+/config/apikeys.json

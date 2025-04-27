@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Day Book</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .day-book-form {
+      background-color: #ffffff;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+    
+    .form-group input[type="date"],
+    .form-group input[type="number"] {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background-color: #ffffff;
+    }
+    
+    .form-group input:focus {
+      border-color: #116a1e;
+      box-shadow: 0 0 0 3px rgba(17, 106, 30, 0.1);
+      outline: none;
+    }
+    
+    .date-range {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    
+    .preset-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
+      padding: 20px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .preset-button {
+      padding: 12px 15px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+    
+    .preset-button:hover {
+      background-color: #116a1e;
+      color: #ffffff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(17, 106, 30, 0.2);
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      margin: 15px 0;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+      margin-right: 10px;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #0a66bd;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    #toggleLabel {
+      font-weight: 500;
+      color: #333;
+      margin-left: 12px;
+      font-size: 14px;
+    }
+    
+    .action-button {
+      padding: 10px 20px;
+      background-color: #116a1e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .action-button:hover {
+      background-color: #0d5517;
+    }
+    
+    .download-button {
+      background-color: #1976D2;
+    }
+    
+    .download-button:hover {
+      background-color: #1565C0;
+    }
+    
+    .back-button {
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #f44336;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      transition: background-color 0.2s;
+    }
+    
+    .back-button:hover {
+      background-color: #d32f2f;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th {
+      background-color: #f8f9fa;
+      color: #333;
+      font-weight: 600;
+      padding: 12px;
+      border-bottom: 2px solid #116a1e;
+    }
+    
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .table-container {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .date-range {
+        grid-template-columns: 1fr;
+      }
+      
+      .preset-buttons {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Day Book</h1>
+    <a href="/reports" class="back-button">Back</a>
+    
+    <div class="day-book-form">
+      <form id="dayBookForm">
+        <div class="form-group">
+          <label style="font-size:x-large; font-weight: 600;" for="openingBalance">Opening Balance:</label>
+          <input type="number" id="openingBalance" name="openingBalance" placeholder="Enter opening balance for the Start Date" required>
+        </div>
+        <div class="toggle-container">
+          <label class="toggle-switch">
+            <input type="checkbox" id="tableToggle">
+            <span class="slider"></span>
+          </label>
+          <span id="toggleLabel">Standard</span>
+          <p style="margin-left: 20px; color: #d32f2f;">Switch/Click here to search in S Series</p>
+        </div>
+        
+        <div class="date-range">
+          <div class="form-group">
+            <label style="font-size: large; font-weight: 600;" for="fromDate">From Date</label>
+            <input  type="date" id="fromDate" name="fromDate" required>
+          </div>
+          
+          <div class="form-group">
+            <label  style="font-size: large; font-weight: 600;" for="toDate">To Date</label>
+            <input type="date" id="toDate" name="toDate" required>
+          </div>
+        </div>
+
+        <div class="preset-buttons">
+          <button type="button" class="preset-button" data-preset="last-30-days">Last 30 Days</button>
+          <button type="button" class="preset-button" data-preset="last-3-months">Last 3 Months</button>
+          <button type="button" class="preset-button" data-preset="last-6-months">Last 6 Months</button>
+          <button type="button" class="preset-button" data-preset="current-fy">Current FY</button>
+          <button type="button" class="preset-button" data-preset="previous-fy">Previous FY</button>
+          <button type="button" class="preset-button" data-preset="year-to-date">Year to Date</button>
+          <button type="button" class="preset-button" data-preset="previous-calendar-year">Previous Year</button>
+        </div>
+      
+        
+        <div>
+          <button type="submit" class="action-button" style="background: #0d5517;">Fetch Data</button>
+          <button type="button" id="downloadExcel" class="action-button download-button" style="display: none; background: #1565C0;">Download Excel</button>
+          <button type="button" id="downloadPdf" class="action-button download-button" style="background-color: #FF5722; margin-left: 10px; display: none;">Download PDF</button>
+          <!-- <button type="button" class="action-button back-button" onclick="window.location.href='/'">Back</button> -->
+        </div>
+      </form>
+    </div>
+    
+    <div class="table-container" id="dayBookTableContainer" style="display: none;">
+      <table id="dayBookTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Opening Balance</th>
+            <th>Pledge Amount</th>
+            <th>Release Amount</th>
+            <th>Interest Received</th>
+            <th>Interest Against Expense</th>
+            <th>Operating Expenses</th>
+            <th>Total</th>
+            <th>Closing Balance</th>
+          </tr>
+        </thead>
+        <tbody id="dayBookTableBody">
+          <!-- Data will be populated here -->
+        </tbody>
+        <tfoot id="dayBookTableFooter">
+          <!-- Summary will be populated here -->
+        </tfoot>
+      </table>
+    </div>
+    <button class="back-button-form" onclick="window.location.href='/'">Back to Home Page</button>
+
+  </div>
+
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default dates
+      const today = new Date();
+      document.getElementById('toDate').value = today.toISOString().split('T')[0];
+      
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      document.getElementById('fromDate').value = thirtyDaysAgo.toISOString().split('T')[0];
+      
+      // Toggle switch for Day_Book / S_Day_Book
+      const tableToggle = document.getElementById('tableToggle');
+      const toggleLabel = document.getElementById('toggleLabel');
+      
+      tableToggle.addEventListener('change', function() {
+        toggleLabel.textContent = this.checked ? 'S Series' : 'Standard';
+      });
+      
+      // Preset date buttons
+      document.querySelectorAll('.preset-button').forEach(button => {
+        button.addEventListener('click', function() {
+          const preset = this.getAttribute('data-preset');
+          setPresetDates(preset);
+        });
+      });
+      
+      // Form submission
+      document.getElementById('dayBookForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetchDayBookData();
+      });
+      
+      // Download Excel button
+      document.getElementById('downloadExcel').addEventListener('click', function() {
+        downloadExcel();
+      });
+    });
+    
+    // Set dates based on preset buttons
+    function setPresetDates(preset) {
+      const today = new Date();
+      const fromDateInput = document.getElementById('fromDate');
+      const toDateInput = document.getElementById('toDate');
+      
+      // Set today as the end date by default
+      toDateInput.value = today.toISOString().split('T')[0];
+      
+      switch(preset) {
+        case 'current-fy':
+          // April 1st of current year or previous year based on current month
+          const currentYear = today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+          fromDateInput.value = `${currentYear}-04-01`;
+          break;
+          
+        case 'previous-fy':
+          // April 1st of previous financial year
+          const prevFYStart = today.getMonth() >= 3 ? today.getFullYear() - 1 : today.getFullYear() - 2;
+          const prevFYEnd = prevFYStart + 1;
+          fromDateInput.value = `${prevFYStart}-04-01`;
+          toDateInput.value = `${prevFYEnd}-03-31`;
+          break;
+          
+        case 'last-3-months':
+          const threeMonthsAgo = new Date();
+          threeMonthsAgo.setMonth(today.getMonth() - 3);
+          fromDateInput.value = threeMonthsAgo.toISOString().split('T')[0];
+          break;
+          
+        case 'last-6-months':
+          const sixMonthsAgo = new Date();
+          sixMonthsAgo.setMonth(today.getMonth() - 6);
+          fromDateInput.value = sixMonthsAgo.toISOString().split('T')[0];
+          break;
+          
+        case 'last-30-days':
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(today.getDate() - 30);
+          fromDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+          break;
+
+        case 'year-to-date':
+          const thisYear = today.getFullYear();
+          fromDateInput.value = `${thisYear}-01-01`;
+          break;
+
+        case 'previous-calendar-year':
+          // Previous year January 1st to December 31st
+          const prevYear = today.getFullYear() - 1;
+          fromDateInput.value = `${prevYear}-01-01`;
+          toDateInput.value = `${prevYear}-12-31`;
+          break;
+      }
+    }
+    
+    document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+    // Fetch data from the server
+    // Fetch data from the server
+function fetchDayBookData() {
+  const openingBalance = document.getElementById('openingBalance').value;
+  const fromDate = document.getElementById('fromDate').value;
+  const toDate = document.getElementById('toDate').value;
+  const isSpecial = document.getElementById('tableToggle').checked;
+  
+  fetch(`/day-book-data?fromDate=${fromDate}&toDate=${toDate}&isSpecial=${isSpecial}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        displayDayBookData(data.records, parseFloat(openingBalance));
+        document.getElementById('downloadExcel').style.display = 'inline-block';
+      } else {
+        alert('Error fetching data: ' + data.error);
+        document.getElementById('downloadExcel').style.display = 'none';
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error fetching data. Please try again.');
+      document.getElementById('downloadExcel').style.display = 'none';
+    });
+}
+
+// Display data in the table
+function displayDayBookData(records, openingBalance) {
+  const tableContainer = document.getElementById('dayBookTableContainer');
+  const tableBody = document.getElementById('dayBookTableBody');
+  const tableFooter = document.getElementById('dayBookTableFooter');
+  tableBody.innerHTML = '';
+  tableFooter.innerHTML = '';
+  
+  if (records.length === 0) {
+    tableBody.innerHTML = '<tr><td colspan="9">No records found</td></tr>';
+    tableContainer.style.display = 'block';
+    document.getElementById('downloadExcel').style.display = 'none';
+    return;
+  }
+  
+  // Sort records by date
+  records.sort((a, b) => new Date(a.Date) - new Date(b.Date));
+  
+  let runningBalance = openingBalance;
+  let totalPledge = 0;
+  let totalRelease = 0;
+  let totalInterest = 0;
+  let totalAdditionalInterest = 0;
+  let totalExpense = 0;
+  
+  records.forEach(record => {
+    const tr = document.createElement('tr');
+    
+    // Format date for display
+    const dateObj = new Date(record.Date);
+    const formattedDate = dateObj.toLocaleDateString('en-GB');
+    
+    // Get values with defaults
+    const pledgeAmount = record['Pledge Amount'] || 0;
+    const releaseAmount = record['Release Amount'] || 0;
+    const interestReceived = record['Interest Received'] || 0;
+    const additionalInterestReceived = record['Additional Interest Received'] || 0;
+    const expense = record['Expense'] || 0;
+    
+    // Calculate total based on the new formula: Release + Interest + Interest on Expense - Expense - Pledge
+    const total = releaseAmount + interestReceived + additionalInterestReceived - expense - pledgeAmount;
+    const closingBalance = runningBalance + total;
+    
+    // Update totals for summary
+    totalPledge += pledgeAmount;
+    totalRelease += releaseAmount;
+    totalInterest += interestReceived;
+    totalAdditionalInterest += additionalInterestReceived;
+    totalExpense += expense;
+    
+    tr.innerHTML = `
+      <td>${formattedDate}</td>
+      <td>${runningBalance.toFixed(2)}</td>
+      <td>${pledgeAmount.toFixed(2)}</td>
+      <td>${releaseAmount.toFixed(2)}</td>
+      <td>${interestReceived.toFixed(2)}</td>
+      <td>${additionalInterestReceived.toFixed(2)}</td>
+      <td>${expense.toFixed(2)}</td>
+      <td>${total.toFixed(2)}</td>
+      <td>${closingBalance.toFixed(2)}</td>
+    `;
+    
+    tableBody.appendChild(tr);
+    
+    // Update running balance for next row
+    runningBalance = closingBalance;
+  });
+  
+  // Add summary row to the table footer
+  const summaryTr = document.createElement('tr');
+  summaryTr.style.fontWeight = 'bold';
+  summaryTr.style.backgroundColor = '#f2f2f2';
+  
+  summaryTr.innerHTML = `
+    <td>Summary</td>
+    <td>${openingBalance.toFixed(2)}</td>
+    <td>${totalPledge.toFixed(2)}</td>
+    <td>${totalRelease.toFixed(2)}</td>
+    <td>${totalInterest.toFixed(2)}</td>
+    <td>${totalAdditionalInterest.toFixed(2)}</td>
+    <td>${totalExpense.toFixed(2)}</td>
+    <td>${(totalRelease + totalInterest + totalAdditionalInterest - totalExpense - totalPledge).toFixed(2)}</td>
+    <td>${runningBalance.toFixed(2)}</td>
+  `;
+  
+  tableFooter.appendChild(summaryTr);
+  
+  tableContainer.style.display = 'block';
+  
+  // Store data for Excel download
+  window.dayBookData = {
+    records: records,
+    openingBalance: openingBalance,
+    firstOpeningBalance: openingBalance,
+    lastClosingBalance: runningBalance,
+    summary: {
+      totalPledge,
+      totalRelease,
+      totalInterest,
+      totalAdditionalInterest,
+      totalExpense
+    }
+  };
+}
+    // Download data as Excel
+    function downloadExcel() {
+      if (!window.dayBookData) {
+        alert('Please fetch data first.');
+        return;
+      }
+      
+      const openingBalance = window.dayBookData.openingBalance;
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+      const isSpecial = document.getElementById('tableToggle').checked;
+      const tableName = isSpecial ? 'S_Day_Book' : 'Day_Book';
+
+      
+      
+      window.location.href = `/day-book-excel?fromDate=${fromDate}&toDate=${toDate}&openingBalance=${openingBalance}&isSpecial=${isSpecial}`;
+    }
+
+  
+
+  </script>
+   <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+</footer>
+</body>
+</html>

@@ -12,14 +12,14 @@
       margin: 0;
       padding: 0;
       height: 100vh;
-      overflow: hidden;
+      overflow: auto;
       background: linear-gradient(135deg, #f5f7fa 0%, #eef2f3 100%);
       position: relative;
     }
 
     /* Background decorative elements */
     .bg-pattern {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -33,7 +33,7 @@
 
     /* Diagonal decorative line */
     .diagonal-line {
-      position: absolute;
+      position: fixed;
       width: 100%;
       height: 2px;
       background: linear-gradient(90deg, transparent, rgba(218, 68, 83, 0.2), rgba(137, 33, 107, 0.2), transparent);
@@ -59,6 +59,78 @@
       z-index: 2;
       backdrop-filter: blur(5px);
       animation: fadeIn 1s ease-out;
+      border-left: 4px solid #ded9d9;
+      /* border-right: 4px solid #DA4453; */
+      border: 4px solid #dbdbdb;
+    }
+
+    /* Today's Released Bills container */
+    .today-bills-container {
+      margin: 30px auto 50px;
+      max-width: 600px;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      position: relative;
+      z-index: 2;
+      backdrop-filter: blur(5px);
+      text-align: center;
+      border-left: 4px solid #DA4453;
+      /* border: 4px solid #dbdbdb; */
+    }
+
+    .today-bills-header {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      color: #89216B;
+      font-weight: 600;
+      position: relative;
+      display: inline-block;
+    }
+
+    .today-bills-header::after {
+      content: '';
+      position: absolute;
+      width: 70%;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #DA4453, #89216B, transparent);
+      bottom: -5px;
+      left: 15%;
+    }
+
+    .bills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+
+    .bill-chip {
+      padding: 8px 15px;
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #0f1012;
+      border: 1px solid rgba(218, 68, 83, 0.2);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .bill-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #DA4453, #89216B);
+      color: white;
+    }
+
+    .no-bills-message {
+      font-style: italic;
+      color: #6c757d;
+      margin: 15px 0;
     }
 
     @keyframes fadeIn {
@@ -132,6 +204,83 @@
       left: 100%;
     }
 
+    /* Keyboard shortcut display */
+    .shortcut-indicator {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.559);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* Keyboard shortcuts help panel */
+    .shortcuts-help {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+      text-align: left;
+      max-width: 300px;
+      border-left: 4px solid #DA4453;
+      display: none;
+    }
+
+    .shortcuts-help h3 {
+      margin-top: 0;
+      color: #89216B;
+      font-size: 16px;
+    }
+
+    .shortcuts-help ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .shortcuts-help li {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .shortcuts-help kbd {
+      background: #f1f1f1;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 2px 5px;
+      margin: 0 2px;
+    }
+
+    .help-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(137, 33, 107, 0.8);
+      color: white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 11;
+      transition: all 0.3s ease;
+    }
+
+    .help-toggle:hover {
+      transform: scale(1.1);
+      background: rgba(218, 68, 83, 0.9);
+    }
+
     /* Falling "gold coins" */
     .coin {
       position: absolute;
@@ -183,7 +332,7 @@
 
     /* Footer styling */
     .footer {
-      position: absolute;
+      position: relative;
       bottom: 10px;
       left: 0;
       width: 100%;
@@ -192,6 +341,25 @@
       font-size: 12px;
       opacity: 0.7;
       z-index: 2;
+      margin-top: 40px;
+      padding-bottom: 20px;
+    }
+
+    /* Toast notification for shortcuts */
+    .shortcut-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      z-index: 100;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -202,27 +370,154 @@
   <div class="jewelry-icon ring-icon"></div>
   <div class="jewelry-icon necklace-icon"></div>
   
+  <!-- Shortcut toast notification -->
+  <div id="shortcutToast" class="shortcut-toast"></div>
+  
   <!-- Main content -->
   <div class="container">
     <h1>Shanthi Pawn Brokers</h1>
     <div class="buttons-grid">
-      <button onclick="window.location.href='/add-bill'">Add Bill</button>
-      <button onclick="window.location.href='/principal-addition'">Principal Addition</button>
-      <button onclick="window.location.href='/repayment'">Repayment</button>
-      <button onclick="window.location.href='/release'">Release</button>
-      <button onclick="window.location.href='/find-bill'">Find Bill</button>
-      <button onclick="window.location.href='/calculate-interest'">Calculate Interest</button>
-      <button onclick="window.location.href='/print-bill'">Print Bill</button>
-      <button onclick="window.location.href='/backup-interface'">Back Up</button>
-      <button onclick="window.location.href='/edit-bill'">Edit Bill</button>
+      <button onclick="window.location.href='/add-bill'" id="addBillBtn">
+        Add Bill
+        <span class="shortcut-indicator">1</span>
+      </button>
+      <button onclick="window.location.href='/principal-addition'" id="principalAdditionBtn">
+        Principal Addition
+        <span class="shortcut-indicator">2</span>
+      </button>
+      <button onclick="window.location.href='/repayment'" id="repaymentBtn">
+        Repayment
+        <span class="shortcut-indicator">3</span>
+      </button>
+      <button onclick="window.location.href='/release'" id="releaseBtn">
+        Release
+        <span class="shortcut-indicator">4</span>
+      </button>
+      <button onclick="window.location.href='/find-bill'" id="findBillBtn">
+        Find Bill
+        <span class="shortcut-indicator">5</span>
+      </button>
+      <button onclick="window.location.href='/calculate-interest'" id="calculateInterestBtn">
+        Calculate Interest
+        <span class="shortcut-indicator">6</span>
+      </button>
+      <button onclick="window.location.href='/print-bill'" id="printBillBtn">
+        Print Bill
+        <span class="shortcut-indicator">7</span>
+      </button>
+      <button onclick="window.location.href='/backup-interface'" id="backupBtn">
+        Back Up
+        <span class="shortcut-indicator">8</span>
+      </button>
+      <button onclick="window.location.href='/edit-bill'" id="editBillBtn">
+        Edit Bill
+        <span class="shortcut-indicator">9</span>
+      </button>
+      <button  onclick="window.location.href='/reports'" id="reportsBtn">
+        Insights & Reports
+        <span class="shortcut-indicator">0</span>
+      </button>
     </div>
   </div>
-
-  <div class="footer">
-    Luxury Gold & Silver Since 1982
+  
+  <!-- Today's Released Bills Container -->
+  <% if (typeof releasedBills !== 'undefined' && releasedBills.length > 0) { %>
+    <div class="today-bills-container">
+      <h2 class="today-bills-header">Today's Released Bills</h2>
+      <div class="bills-list">
+        <% releasedBills.forEach(bill => { %>
+          <div class="bill-chip" onclick="window.location.href='/find-bill?billNo=<%= bill %>'">
+            <%= bill %>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+  
+  <!-- Help toggle button -->
+  <div class="help-toggle" id="helpToggle">?</div>
+  
+  <!-- Keyboard shortcuts help panel -->
+  <div class="shortcuts-help" id="shortcutsHelp">
+    <h3>Keyboard Shortcuts</h3>
+    <ul>
+      <li><kbd>1</kbd> - Add Bill</li>
+      <li><kbd>2</kbd> - Principal Addition</li>
+      <li><kbd>3</kbd> - Repayment</li>
+      <li><kbd>4</kbd> - Release</li>
+      <li><kbd>5</kbd> - Find Bill</li>
+      <li><kbd>6</kbd> - Calculate Interest</li>
+      <li><kbd>7</kbd> - Print Bill</li>
+      <li><kbd>8</kbd> - Back Up</li>
+      <li><kbd>9</kbd> - Edit Bill</li>
+      <li><kbd>0</kbd> - Reports</li>
+      <li><kbd>H</kbd> - Toggle Help</li>
+    </ul>
   </div>
 
   <script>
+    // Define shortcuts mapping
+    const shortcuts = {
+      '1': { url: '/add-bill', name: 'Add Bill' },
+      '2': { url: '/principal-addition', name: 'Principal Addition' },
+      '3': { url: '/repayment', name: 'Repayment' },
+      '4': { url: '/release', name: 'Release' },
+      '5': { url: '/find-bill', name: 'Find Bill' },
+      '6': { url: '/calculate-interest', name: 'Calculate Interest' },
+      '7': { url: '/print-bill', name: 'Print Bill' },
+      '8': { url: '/backup-interface', name: 'Back Up' },
+      '9': { url: '/edit-bill', name: 'Edit Bill' },
+      '0': { url: '/reports', name: 'Reports' }
+    };
+    
+    // Function to show toast notification
+    function showToast(message, duration = 2000) {
+      const toast = document.getElementById('shortcutToast');
+      toast.textContent = message;
+      toast.style.opacity = 1;
+      
+      setTimeout(() => {
+        toast.style.opacity = 0;
+      }, duration);
+    }
+    
+    // Add keyboard shortcut functionality
+    document.addEventListener('keydown', function(event) {
+      // Don't trigger shortcuts if user is typing in an input field
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      const key = event.key;
+      
+      // Help toggle with 'h' key
+      if (key.toLowerCase() === 'h') {
+        toggleHelp();
+        return;
+      }
+      
+      // Check if key is a shortcut
+      if (shortcuts[key]) {
+        showToast(`Navigating to ${shortcuts[key].name}...`);
+        setTimeout(() => {
+          window.location.href = shortcuts[key].url;
+        }, 300);
+      }
+    });
+    
+    // Toggle help panel
+    function toggleHelp() {
+      const helpPanel = document.getElementById('shortcutsHelp');
+      if (helpPanel.style.display === 'block') {
+        helpPanel.style.display = 'none';
+      } else {
+        helpPanel.style.display = 'block';
+      }
+    }
+    
+    // Help toggle button
+    document.getElementById('helpToggle').addEventListener('click', toggleHelp);
+    
     // Function to create falling "gold coins"
     function createFallingCoin() {
       const coin = document.createElement("div");
@@ -285,6 +580,22 @@
     }
     
     setInterval(addSparkleToTitle, 1000);
+    
+    // Initialize - show help panel on first visit
+    const isFirstVisit = !localStorage.getItem('visitedBefore');
+    if (isFirstVisit) {
+      document.getElementById('shortcutsHelp').style.display = 'block';
+      localStorage.setItem('visitedBefore', 'true');
+      
+      // Auto-hide after 8 seconds on first visit
+      setTimeout(() => {
+        document.getElementById('shortcutsHelp').style.display = 'none';
+      }, 8000);
+    }
   </script>
+  
+  <footer class="footer" style="font-size: medium;">
+    <p>Shanthi Pawn Brokers ®</p>
+  </footer>
 </body>
 </html>

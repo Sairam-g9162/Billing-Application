@@ -27,11 +27,10 @@
             min-height: 100vh;
         }
 
-        .main-container {
+        /* .main-container {
             display: flex;
             min-height: 100vh;
-        }
-
+        } */
 
         .content {
             flex-grow: 1;
@@ -60,22 +59,57 @@
         }
 
         h1:after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background-color: var(--primary-color);
-            border-radius: 2px;
-        }
+        content: '';
+        position: absolute;
+        width: 70%;
+        height: 2px;
+        background: linear-gradient(to right, transparent, #DA4453, #89216B, transparent);
+        bottom: -5px;
+        left: 15%;
+            }
 
         .button-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
             margin-top: 30px;
+        }
+
+        #completeBackup, #googleDriveBackup {
+            flex: 1;
+            max-width: 250px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+
+        #completeBackup {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        #completeBackup:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        #googleDriveBackup {
+            background-color: #34a853; /* Google Drive green color */
+            color: white;
+        }
+        
+        #googleDriveBackup:hover {
+            background-color: #2d9249;
+        }
+        
+        #completeBackup i, #googleDriveBackup i {
+            margin-right: 8px;
         }
 
         .date-input {
@@ -156,6 +190,94 @@
             background-color: #f8d7da;
             color: #842029;
         }
+        
+        /* New styles for the backup info sections */
+        .backup-info-container {
+            margin-top: 40px;
+        }
+        
+        .backup-info {
+            background-color: var(--light-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 15px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .recent-backup {
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .successful-backup {
+            border-left: 4px solid #0a693d;
+        }
+        
+        .backup-info h3 {
+            color: var(--dark-text);
+            margin-top: 0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .backup-info h3 i {
+            margin-right: 10px;
+        }
+        .recent-backup h3 i {
+            color: var(--primary-color);
+        }
+        
+        .successful-backup h3 i {
+            color: #0e623b;
+        }
+        
+        .backup-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .backup-detail {
+            background-color: white;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .backup-detail h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: var(--secondary-color);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .backup-detail h4 i {
+            margin-right: 8px;
+        }
+        
+        .backup-detail p {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            color: #198754;
+        }
+        
+        .status-error {
+            color: #dc3545;
+        }
+        
+        .status-pending {
+            color: #fd7e14;
+        }
+        
+        .last-successful-backup {
+            display: none; /* Hidden by default, shown when needed */
+        }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -163,24 +285,29 @@
                 flex-direction: column;
             }
             
-           
-            
-            
             .content {
                 padding: 20px 15px;
             }
             
             .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            #completeBackup, #googleDriveBackup {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .backup-details {
                 grid-template-columns: 1fr;
             }
         }
     </style>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="main-container">
-
         <div class="content">
             <div class="container">
                 <a href="/" class="back-button">Home</a>
@@ -188,17 +315,11 @@
                 <h1>Database Backup Manager</h1>
                 
                 <div class="button-container">
-                    <button id="completeBackup"><i class="fas fa-save"></i> Complete Data Backup</button>
-                    <button id="todaysBackup"><i class="fas fa-calendar-day"></i> Today's Data Backup</button>
-                    <button id="customBackup"><i class="fas fa-calendar-alt"></i> Custom Date Backup</button>
+                    <button id="completeBackup" ><i class="fas fa-save"></i> Local Backup</button>
+                    <button id="googleDriveBackup"><i class="fab fa-google-drive"></i> Google Drive Backup</button>
                 </div>
-                
-                <div id="dateInput" class="date-input">
-                    <label for="customDate"><i class="fas fa-calendar"></i> Select Date:</label>
-                    <input type="date" id="customDate" required>
-                    <button id="submitCustomDate"><i class="fas fa-check"></i> Create Backup</button>
-                </div>
-                
+                <p style="color: rgb(148, 24, 24); font-weight: 600;">Note: For the Google Drive Backup the Internet Connections is Required</p>
+                <p style="font-size:x-large; font-weight:600; color:#0f5132; margin-left: 30px; margin-bottom: -20px; text-align: left;">Backup History </p>
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
                     <p>Creating backup, please wait...</p>
@@ -213,86 +334,349 @@
                     <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
                     <p>An error occurred during backup. Please try again.</p>
                 </div>
+                
+                <!-- Make sure your HTML structure exactly matches this -->
+                <div class="backup-info-container">
+                    <!-- Complete Backup Info Card -->
+                    <div class="backup-info complete-backup" id="completeBackupInfo">
+                        <h3><i class="fas fa-database"></i> Local Backup</h3>
+                        <div class="backup-details">
+                            <div class="backup-detail">
+                                <h4><i class="fas fa-calendar"></i> Date</h4>
+                                <p id="completeBackupDate">No data available</p>
+                            </div>
+                            <div class="backup-detail">
+                                <h4><i class="fas fa-clock"></i> Time</h4>
+                                <p id="completeBackupTime">N/A</p>
+                            </div>
+                            <div class="backup-detail">
+                                <h4><i class="fas fa-info-circle"></i> Status</h4>
+                                <p id="completeBackupStatus"><span class="status-pending"><i class="fas fa-minus-circle"></i> Not Available</span></p>
+                            </div>
+                            <div class="backup-detail last-successful-info" id="completeBackupLastSuccessful" style="display: none;">
+                                <h4><i class="fas fa-history"></i> Last Successful</h4>
+                                <p id="completeBackupLastSuccessfulDate">N/A</p>
+                                <p id="completeBackupLastSuccessfulTime">N/A</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Google Drive Backup Info Card -->
+                    <div class="backup-info google-drive-backup" id="googleDriveBackupInfo">
+                        <h3><i class="fab fa-google-drive"></i> Google Drive Backup</h3>
+                        <div class="backup-details">
+                            <div class="backup-detail">
+                                <h4><i class="fas fa-calendar"></i> Date</h4>
+                                <p id="googleDriveBackupDate">No data available</p>
+                            </div>
+                            <div class="backup-detail">
+                                <h4><i class="fas fa-clock"></i> Time</h4>
+                                <p id="googleDriveBackupTime">N/A</p>
+                            </div>
+                            <div class="backup-detail">
+                                <h4><i class="fas fa-info-circle"></i> Status</h4>
+                                <p id="googleDriveBackupStatus"><span class="status-pending"><i class="fas fa-minus-circle"></i> Not Available</span></p>
+                            </div>
+                            <!-- Added Last Successful section that will be hidden/shown as needed -->
+                            <div class="backup-detail last-successful-info" id="googleDriveBackupLastSuccessful" style="display: none;">
+                                <h4><i class="fas fa-history"></i> Last Successful</h4>
+                                <p id="googleDriveBackupLastSuccessfulDate">N/A</p>
+                                <p id="googleDriveBackupLastSuccessfulTime">N/A</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+               
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const completeBackup = document.getElementById('completeBackup');
-            const todaysBackup = document.getElementById('todaysBackup');
-            const customBackup = document.getElementById('customBackup');
-            const dateInput = document.getElementById('dateInput');
-            const customDate = document.getElementById('customDate');
-            const submitCustomDate = document.getElementById('submitCustomDate');
-            const loading = document.getElementById('loading');
-            const successMessage = document.getElementById('successMessage');
-            const errorMessage = document.getElementById('errorMessage');
+        // This is the corrected JavaScript code for the Database Backup Manager
+document.addEventListener('DOMContentLoaded', function() {
+    const completeBackup = document.getElementById('completeBackup');
+    const googleDriveBackup = document.getElementById('googleDriveBackup');
+    const loading = document.getElementById('loading');
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    // Load backup history on page load
+    loadBackupHistory();
+    
+    // Event listeners
+    completeBackup.addEventListener('click', function() {
+        performBackup('complete');
+    });
+    
+    // Google Drive backup event listener
+    googleDriveBackup.addEventListener('click', function() {
+        performGoogleDriveBackup();
+    });
+
+    document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+    // Updated function to display backup info in the two cards
+    function updateBackupInfoUI(backupHistory) {
+        console.log("Updating UI with backup history:", backupHistory); // Debug log
+        
+        // Find the most recent backups of each type (first in array with matching type)
+        const mostRecentCompleteBackup = backupHistory.find(record => record.type === 'complete');
+        const mostRecentGoogleDriveBackup = backupHistory.find(record => record.type === 'google-drive');
+        
+        // Find the most recent successful backups for each type
+        const lastSuccessfulCompleteBackup = backupHistory.filter(record => 
+            record.type === 'complete' && record.status === 'success'
+        )[0];
+        
+        const lastSuccessfulGoogleDriveBackup = backupHistory.filter(record => 
+            record.type === 'google-drive' && record.status === 'success'
+        )[0];
+        
+        console.log("Most recent complete:", mostRecentCompleteBackup);
+        console.log("Most recent Google Drive:", mostRecentGoogleDriveBackup);
+        console.log("Last successful complete:", lastSuccessfulCompleteBackup);
+        console.log("Last successful Google Drive:", lastSuccessfulGoogleDriveBackup);
+        
+        // Update Complete Backup Info Card
+        updateBackupCard(
+            mostRecentCompleteBackup,
+            lastSuccessfulCompleteBackup,
+            'complete'
+        );
+        
+        // Update Google Drive Backup Info Card
+        updateBackupCard(
+            mostRecentGoogleDriveBackup,
+            lastSuccessfulGoogleDriveBackup,
+            'googleDrive'
+        );
+    }
+
+    // Helper function to update a specific backup card
+    function updateBackupCard(recentBackup, successfulBackup, cardType) {
+        const dateElement = document.getElementById(`${cardType}BackupDate`);
+        const timeElement = document.getElementById(`${cardType}BackupTime`);
+        const statusElement = document.getElementById(`${cardType}BackupStatus`);
+        const lastSuccessfulElement = document.getElementById(`${cardType}BackupLastSuccessful`);
+        const lastSuccessfulDateElement = document.getElementById(`${cardType}BackupLastSuccessfulDate`);
+        const lastSuccessfulTimeElement = document.getElementById(`${cardType}BackupLastSuccessfulTime`);
+        
+        // Verify elements exist
+        if (!dateElement || !timeElement || !statusElement) {
+            console.error(`Missing UI elements for ${cardType} backup card`);
+            return;
+        }
+        
+        if (recentBackup) {
+            const backupDate = new Date(recentBackup.timestamp);
             
-            // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
-            customDate.value = today;
+            dateElement.textContent = backupDate.toLocaleDateString();
+            timeElement.textContent = backupDate.toLocaleTimeString();
             
-            // Event listeners
-            completeBackup.addEventListener('click', function() {
-                performBackup('complete');
-            });
-            
-            todaysBackup.addEventListener('click', function() {
-                performBackup('today');
-            });
-            
-            customBackup.addEventListener('click', function() {
-                dateInput.style.display = 'block';
-            });
-            
-            submitCustomDate.addEventListener('click', function() {
-                if (customDate.value) {
-                    performBackup('custom', customDate.value);
+            let statusHtml;
+            if (recentBackup.status === 'success') {
+                statusHtml = '<span class="status-success"><i class="fas fa-check-circle"></i> Successful</span>';
+                
+                // Hide last successful section when the recent backup is successful
+                if (lastSuccessfulElement) {
+                    lastSuccessfulElement.style.display = 'none';
                 }
-            });
-            
-            function performBackup(type, date = null) {
-                // Hide date input if visible
-                dateInput.style.display = 'none';
+            } else if (recentBackup.status === 'error') {
+                statusHtml = '<span class="status-error"><i class="fas fa-times-circle"></i> Failed</span>';
                 
-                // Show loading, hide messages
-                loading.style.display = 'block';
-                successMessage.style.display = 'none';
-                errorMessage.style.display = 'none';
-                
-                let url = '/backup?type=' + type;
-                if (type === 'custom' && date) {
-                    url += '&date=' + date;
+                // Show last successful backup info if available
+                if (successfulBackup && successfulBackup.timestamp !== recentBackup.timestamp && 
+                    lastSuccessfulElement && lastSuccessfulDateElement && lastSuccessfulTimeElement) {
+                    
+                    const successDate = new Date(successfulBackup.timestamp);
+                    lastSuccessfulDateElement.textContent = successDate.toLocaleDateString();
+                    lastSuccessfulTimeElement.textContent = successDate.toLocaleTimeString();
+                    lastSuccessfulElement.style.display = 'block';
+                } else if (lastSuccessfulElement) {
+                    lastSuccessfulElement.style.display = 'none';
                 }
-                
-                // Simulate network delay for demo purposes
-                setTimeout(() => {
-                    fetch(url)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Backup failed');
-                            }
-                            return response.text();
-                        })
-                        .then(data => {
-                            loading.style.display = 'none';
-                            successMessage.style.display = 'block';
-                            setTimeout(() => {
-                                successMessage.style.display = 'none';
-                            }, 5000);
-                        })
-                        .catch(error => {
-                            loading.style.display = 'none';
-                            errorMessage.style.display = 'block';
-                            setTimeout(() => {
-                                errorMessage.style.display = 'none';
-                            }, 5000);
-                            console.error('Error:', error);
-                        });
-                }, 1000);
+            } else {
+                statusHtml = '<span class="status-pending"><i class="fas fa-clock"></i> Pending</span>';
+                if (lastSuccessfulElement) {
+                    lastSuccessfulElement.style.display = 'none';
+                }
             }
+            
+            statusElement.innerHTML = statusHtml;
+        } else {
+            dateElement.textContent = 'No backup recorded';
+            timeElement.textContent = 'N/A';
+            statusElement.innerHTML = '<span class="status-pending"><i class="fas fa-minus-circle"></i> Not Available</span>';
+            if (lastSuccessfulElement) {
+                lastSuccessfulElement.style.display = 'none';
+            }
+        }
+    }
+    
+    function performBackup(type) {
+        // Show loading, hide messages
+        loading.style.display = 'block';
+        successMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+        
+        let url = '/backup?type=' + type;
+        
+        // Get current timestamp for recording backup time
+        const backupTimestamp = new Date();
+        
+        // Simulate network delay for demo purposes
+        setTimeout(() => {
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Backup failed');
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    loading.style.display = 'none';
+                    successMessage.style.display = 'block';
+                    
+                    // Record backup to server
+                    addBackupRecordToServer(type, null, backupTimestamp, 'success');
+                    
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                    }, 5000);
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    errorMessage.style.display = 'block';
+                    
+                    // Record failed backup to server
+                    addBackupRecordToServer(type, null, backupTimestamp, 'error');
+                    
+                    setTimeout(() => {
+                        errorMessage.style.display = 'none';
+                    }, 5000);
+                    console.error('Error:', error);
+                });
+        }, 1000);
+    }
+    
+    function performGoogleDriveBackup() {
+        // Show loading, hide messages
+        loading.style.display = 'block';
+        loading.querySelector('p').textContent = 'Creating Google Drive backup, please wait...';
+        successMessage.style.display = 'none';
+        errorMessage.style.display = 'none';
+        
+        // Get current timestamp for recording backup time
+        const backupTimestamp = new Date();
+        
+        fetch('/backup-to-google-drive')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Google Drive backup failed');
+                }
+                return response.text();
+            })
+            .then(data => {
+                loading.style.display = 'none';
+                successMessage.querySelector('p').textContent = 'Google Drive backup completed successfully!';
+                successMessage.style.display = 'block';
+                
+                // Record backup to server
+                addBackupRecordToServer('google-drive', null, backupTimestamp, 'success');
+                
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                    successMessage.querySelector('p').textContent = 'Backup completed successfully!';
+                }, 5000);
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                errorMessage.querySelector('p').textContent = 'An error occurred during Google Drive backup. Please try again.';
+                errorMessage.style.display = 'block';
+                
+                // Record failed backup to server
+                addBackupRecordToServer('google-drive', null, backupTimestamp, 'error');
+                
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                    errorMessage.querySelector('p').textContent = 'An error occurred during backup. Please try again.';
+                }, 5000);
+                console.error('Error:', error);
+            });
+    }
+    
+    // Function to add backup record to server
+    function addBackupRecordToServer(type, date, timestamp, status) {
+        // Prepare the backup record data
+        const backupRecord = {
+            type: type,
+            customDate: date,
+            timestamp: timestamp.toISOString(),
+            status: status
+        };
+        
+        console.log("Sending backup record to server:", backupRecord); // Debug log
+        
+        // Send to server
+        fetch('/record-backup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(backupRecord)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to record backup history');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Successfully recorded backup, server response:", data); // Debug log
+            // After successful recording, update UI
+            loadBackupHistory();
+        })
+        .catch(error => {
+            console.error('Error recording backup history:', error);
         });
+    }
+    
+    // Function to load backup history from server
+    function loadBackupHistory() {
+        console.log("Fetching backup history from server..."); // Debug log
+        
+        fetch('/get-backup-history')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch backup history');
+                }
+                return response.json();
+            })
+            .then(backupHistory => {
+                console.log("Received backup history:", backupHistory); // Debug log
+                updateBackupInfoUI(backupHistory);
+            })
+            .catch(error => {
+                console.error('Error loading backup history:', error);
+                // Display error in UI if needed
+                document.getElementById('completeBackupDate').textContent = 'Could not load backup history';
+                document.getElementById('completeBackupTime').textContent = 'N/A';
+                document.getElementById('completeBackupStatus').innerHTML = '<span class="status-error"><i class="fas fa-exclamation-circle"></i> Error</span>';
+                
+                document.getElementById('googleDriveBackupDate').textContent = 'Could not load backup history';
+                document.getElementById('googleDriveBackupTime').textContent = 'N/A';
+                document.getElementById('googleDriveBackupStatus').innerHTML = '<span class="status-error"><i class="fas fa-exclamation-circle"></i> Error</span>';
+            });
+    }
+});
     </script>
+<footer>
+    <p>Shanthi Pawn Brokers ®</p>
+</footer>
 </body>
 </html>

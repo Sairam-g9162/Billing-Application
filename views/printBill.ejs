@@ -7,7 +7,7 @@
   <style>
     .container {
     width: 90%;
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 20px;
     box-sizing: border-box;
@@ -189,6 +189,7 @@
       padding: 10px;
       background-color: #f8f8f8;
       border-radius: 5px;
+      border-left: 4px solid #4CAF50;
       display: flex;
       align-items: center;
       flex-wrap: wrap;
@@ -253,10 +254,12 @@
     }
   </style>
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <body>
   <div class="container">
     <a href="/" class="back-button no-print">Home</a>
-    <button class="top-right-button" onclick="window.location.href='/find-bill'">Find Bill ?</button>
     <h1 class="no-print">Print Bill</h1>
 
     <!-- Search Form -->
@@ -267,7 +270,12 @@
           <input type="text" id="billNumber" name="billNumber" value="<%= locals.searchBillNumber || '' %>" required>
         </div>
         <button type="submit">Search</button>
+        <div style="float: right;">
+        <button onclick="window.location.href='/add-bill'">Add New Bill</button>
+        <button onclick="window.location.href='/find-bill'">Find Bill ?</button>
+      </div>
       </form>
+      
     </div>
 
     <!-- Display error message -->
@@ -335,7 +343,8 @@
             <div><strong>Pledge No:</strong> <%= bill["Bill Number"] %></div>
             <div><strong>Date:</strong> <%= bill["Date"] %></div>
             <div><strong>Name:</strong> <%= bill["Name"] %></div>
-            <div><strong>Address:</strong><%= bill["Address"] %></span></div>
+            <div><strong>Address:</strong> S/W o <%= bill["FatherorSpouseName"] %>, <%= bill["townOrCity"] %></div>
+            <!-- <div><strong>FatherorSpouseName</strong><% bill["townOrCity"]%></div> -->
             <div><strong>Loan Amount:</strong> ₹<%= bill["Initial Pledged Amount"] %></div>
           </div>
           
@@ -378,24 +387,32 @@
                 } catch(e) {
                   items = {};
                 }
-                
-                // If no items or not a valid JSON, create a fallback
+        
+                let itemValues = {};
+                try {
+                  if (bill["Items_Value"] && typeof bill["Items_Value"] === 'string') {
+                    itemValues = JSON.parse(bill["Items_Value"]);
+                  }
+                } catch(e) {
+                  itemValues = {};
+                }
+        
                 if (Object.keys(items).length === 0) {
                   items = {"Item": "N/A"};
                 }
-                
-                // Display each item
+        
                 Object.entries(items).forEach(([item, weight]) => {
               %>
                 <tr>
                   <td><%= item %></td>
                   <td><%= weight.replace('gms', '') || 'N/A' %></td>
-                  <td>N/A</td>
+                  <td>₹<%= itemValues[item] || 'N/A' %></td>
                 </tr>
               <% }); %>
             </tbody>
           </table>
         </div>
+        
 
         <!-- Principal Addition History View -->
         <div class="principal-view" style="display: none;">
@@ -518,11 +535,14 @@
           </div>
         </div>
       </div>
-      
       <!-- Print Button -->
       <div class="no-print" style="text-align: center; margin-top: 20px;">
         <button class="print-button" onclick="window.print()">Print Bill</button>
       </div>
+      <div class="no-print" style="text-align: center; margin-top: 10px;">
+        <button class="print-button" onclick="downloadAsPDF()"s>Download as PDF</button>
+      </div>
+      
 
       <!-- JavaScript for View Switching and Photo Capture -->
       <script>
@@ -542,6 +562,13 @@
             document.querySelector('.repay-view').style.display = 'block';
           }
         }
+
+        document.addEventListener('keydown', function(event) {
+          if (event.altKey && event.key.toLowerCase() === 'h') {
+            event.preventDefault();
+            window.location.href = '/';
+          }
+        });
 
         // Function to toggle photo section
         function togglePhotoSection() {
@@ -595,7 +622,9 @@
           // Convert to data URL (image)
           return canvas.toDataURL('image/jpeg');
         }
-
+        document.getElementById('billNumber').addEventListener('input', function(e) {
+          this.value = this.value.toUpperCase();
+        });
         // Setup event listeners when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
           const captureButton = document.getElementById('captureButton');
@@ -644,11 +673,37 @@
 
         // Initialize with normal view
         changeView('normal');
+  
+  async function downloadAsPDF() {
+    const { jsPDF } = window.jspdf;
+
+    const billElements = document.querySelectorAll('.pawn-ticket');
+    const pdf = new jsPDF('p', 'pt', 'a4'); // A4 size PDF
+
+    for (let i = 0; i < billElements.length; i++) {
+      const canvas = await html2canvas(billElements[i], { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      if (i !== 0) pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    }
+
+    pdf.save('pawn-bill.pdf');
+  }
+
+
       </script>
     <% } %>
 
     <!-- Back to Home Button -->
     <button onclick="window.location.href='/'" class="no-print">Back to Home Page</button>
   </div>
+  <footer>
+    <p>Shanthi Pawn Brokers ®</p>
+</footer>
 </body>
 </html>

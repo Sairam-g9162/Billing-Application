@@ -331,4 +331,16 @@
     <% } %>
   </div>
 </body>
+<script>
+   document.addEventListener('keydown', function(event) {
+        // Check if Alt + H is pressed
+        if (event.altKey && event.key.toLowerCase() === 'h') {
+          event.preventDefault(); // Prevent default browser behavior
+          window.location.href = '/';
+        }
+      });
+</script>
+<footer>
+  <p>Shanthi Pawn Brokers ®</p>
+</footer>
 </html>
