@@ -1,6 +1,17 @@
 node_modules/
 images/
 /database/bill_management.db
+/database/db.js
+/data/backup
 /backup
 /package.json
 /config/apikeys.json
+temp_google_drive_backup/
+data/
+active/
+backup/
+backups/
+config/
+released/
+package.json
+package-lock.json

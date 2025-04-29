@@ -46,14 +46,6 @@
       <div>
         <label for="date"><gradient-wrapper>Date*</gradient-wrapper></label>
         <input type="date" id="date" name="date" required>
-        <script>
-            const today = new Date().toLocaleString('en-US', {
-              timeZone: 'Asia/Kolkata'
-            });
-            const istDate = new Date(today);
-            document.getElementById('date').value = istDate.toISOString().split('T')[0];
-            document.getElementById('date').max = istDate.toISOString().split('T')[0];
-        </script>
       </div>
       <div>
         <label for="phoneNumber"><gradient-wrapper>Phone Number*</gradient-wrapper></label>
@@ -150,33 +142,35 @@
  
 
   <script>
-    window.addEventListener('load', function() {
-        const form = document.getElementById('billForm');
-        form.reset();
-        
-        // Set the bill number from server
-        document.getElementById('billNumber').value = '<%= nextBillNumber %>';
-        
-        document.addEventListener('keydown', function(event) {
-        // Check if Alt + H is pressed
-        if (event.altKey && event.key.toLowerCase() === 'h') {
-          event.preventDefault(); // Prevent default browser behavior
-          window.location.href = '/';
-        }
-      });
-        // Set default date to today in IST
-        const today = new Date();
-        today.setHours(today.getHours() + 5); // Add 5 hours
-        today.setMinutes(today.getMinutes() + 30); // Add 30 minutes
-        document.getElementById('date').value = today.toISOString().split('T')[0];
-        
-        // Clear item fields
-        document.getElementById('itemFields').innerHTML = '';
-        
-        // Initialize gross weight fields visibility
-        toggleGrossWeightFields();
+window.addEventListener('load', function() {
+    const form = document.getElementById('billForm');
+    form.reset();
+    
+    // Set the bill number from server
+    document.getElementById('billNumber').value = '<%= nextBillNumber %>';
+    
+    document.addEventListener('keydown', function(event) {
+      // Check if Alt + H is pressed
+      if (event.altKey && event.key.toLowerCase() === 'h') {
+        event.preventDefault(); // Prevent default browser behavior
+        window.location.href = '/';
+      }
     });
-
+    
+    // Set default date to today in IST - Fixed version
+    const options = { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const istDateParts = new Intl.DateTimeFormat('en-CA', options).format(new Date()).split('-');
+    const istDateString = `${istDateParts[0]}-${istDateParts[1]}-${istDateParts[2]}`;
+    
+    document.getElementById('date').value = istDateString;
+    document.getElementById('date').max = istDateString; // Set max date to today
+    
+    // Clear item fields
+    document.getElementById('itemFields').innerHTML = '';
+    
+    // Initialize gross weight fields visibility
+    toggleGrossWeightFields();
+});
     // Add this event listener to the form to prevent default submission on Enter key
     document.getElementById('billForm').addEventListener('keypress', function(e) {
       // Check if the key pressed was Enter

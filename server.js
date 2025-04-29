@@ -11,21 +11,23 @@ const archiver = require('archiver');
 const moment = require('moment');
 const { render } = require('ejs');
 const { google } = require('googleapis');
+const {fetchReleasedBills,generateExcelFile} = require('./services/homePageServices')
 
 
 const app = express();
 const BACKUP_HISTORY_FILE = path.join(__dirname, 'data', 'backup_history.json');
 const activeDownloads = new Set();
 
+const KEYFILE_PATH = path.join(__dirname, 'config', 'apikeys.json');
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
-// Set EJS as the view engine
+
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve static files (CSS) from the 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware to parse form data
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
@@ -33,17 +35,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: 'your-secret-key',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
 
-// Routes
-// app.get('/', (req, res) => {
-//   res.render('index'); // Home page
-// });
 app.get('/backup-interface', (req, res) => {
   res.render('backup');
 });
@@ -51,66 +43,50 @@ app.get('/reports', (req, res) => {
   res.render('reports');
 });
 
-// Add this route to your existing server.js file
-
-const fetchTodaysReleasedBills = () => {
-  return new Promise((resolve, reject) => {
-    const today = moment().format('YYYY-MM-DD');
-    
-    // Query to get bills released today from both tables
-    const regularQuery = `SELECT "Bill No" FROM Release_Records WHERE Date = ?`;
-    const sQuery = `SELECT "Bill No" FROM S_Release_Records WHERE Date = ?`;
-    
-    const releasedBills = [];
-    
-    // Query the regular Release_Records table
-    db.all(regularQuery, [today], (err, rows) => {
-      if (err) {
-        console.error('Error querying Release_Records:', err.message);
-        reject(err);
-        return;
-      }
-      
-      // Add bill numbers to the array
-      rows.forEach(row => {
-        releasedBills.push(row['Bill No']);
-      });
-      
-      // Now query the S_Release_Records table
-      db.all(sQuery, [today], (err, sRows) => {
-        if (err) {
-          console.error('Error querying S_Release_Records:', err.message);
-          reject(err);
-          return;
-        }
-        
-        // Add S bill numbers to the same array
-        sRows.forEach(row => {
-          releasedBills.push(row['Bill No']);
-        });
-        
-        // Sort bill numbers for better display
-        releasedBills.sort();
-        resolve(releasedBills);
-      });
-    });
-  });
-};
-
 // Update your home route to include the released bills
 app.get('/', async (req, res) => {
   try {
-    const releasedBills = await fetchTodaysReleasedBills();
+    const { todayReleasedBills, yesterdayReleasedBills } = await fetchReleasedBills();
     res.render('index', { 
-      releasedBills,
-      showReleasedBillsContainer: releasedBills.length > 0 
+      todayReleasedBills,
+      yesterdayReleasedBills,
+      showTodayReleasedBillsContainer: todayReleasedBills.length > 0,
+      showYesterdayReleasedBillsContainer: yesterdayReleasedBills.length > 0
     });
   } catch (err) {
-    console.error('Error fetching today\'s released bills:', err);
+    console.error('Error fetching released bills:', err);
     res.render('index', { 
-      releasedBills: [],
-      showReleasedBillsContainer: false
+      todayReleasedBills: [],
+      yesterdayReleasedBills: [],
+      showTodayReleasedBillsContainer: false,
+      showYesterdayReleasedBillsContainer: false
     });
+  }
+});
+
+
+app.get('/download-bills', async (req, res) => {
+  try {
+    const dateType = req.query.date; // 'today' or 'yesterday'
+    if (dateType !== 'today' && dateType !== 'yesterday') {
+      return res.status(400).send('Invalid date parameter');
+    }
+    
+    const today = moment().format('YYYY-MM-DD');
+    const yesterday = moment().subtract(1, 'days').format('YYYY-MM-DD');
+    const dateForFilename = dateType === 'today' ? today : yesterday;
+    
+    const excelBuffer = await generateExcelFile(dateType);
+    
+    // Set response headers with the actual date in the filename
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${dateForFilename}_released_bills.xlsx`);
+    
+    // Send the excel file
+    res.send(excelBuffer);
+  } catch (err) {
+    console.error('Error downloading bills:', err);
+    res.status(500).send('Error generating Excel file');
   }
 });
 
@@ -268,9 +244,8 @@ app.get('/backup', (req, res) => {
   }
 });
 
-// Google Drive API setup
-const KEYFILE_PATH = path.join(__dirname, 'config', 'apikeys.json');
-const SCOPES = ['https://www.googleapis.com/auth/drive'];
+
+
 
 // Google Drive backup endpoint
 app.get('/backup-to-google-drive', async (req, res) => {
@@ -1764,7 +1739,7 @@ app.get('/export-excel', (req, res) => {
       filterInfo.push(`Status: ${repaymentStatus}`);
     }
     
-    const titleText = `${seriesType === 'S' ? 'S Series' : 'Standard Series'} Bills ${filterInfo.length > 0 ? '- ' + filterInfo.join(', ') : ''}`;
+    const titleText = `${seriesType === 'S' ? 'Unreleased S Series' : ' Unreleased Standard Series'} Bills ${filterInfo.length > 0 ? '- ' + filterInfo.join(', ') : ''}`;
     
     worksheet.insertRow(1, [titleText]);
     worksheet.mergeCells('A1:J1');
@@ -2736,7 +2711,7 @@ app.post('/add-bill', (req, res) => {
       fatherOrSpouseName,            // father_spouse_name
       townOrCity,                    // town_city
       initialPledgedAmount,          // principal_amount
-      12,                            // interest (default 12%)
+      16,                            // interest (default 12%)
       JSON.stringify(itemDescription), // item_description
       JSON.stringify(itemWeights),   // weights
       totalValue,                    // value
@@ -3233,7 +3208,6 @@ app.post('/update-bill', (req, res) => {
     });
   }
 });
-// GET: Principal Addition page
 // GET route for principal-addition page
 app.get('/principal-addition', (req, res) => {
   const billNumber = req.query.billNumber;
@@ -3986,9 +3960,9 @@ app.post('/insights', (req, res) => {
       });
     });
   });
-});
+})
 
-// Route to view all active pledges (for testing)
+//view to backends
 app.get('/view-active-pledges', (req, res) => {
   db.all('SELECT * FROM active_pledges', (err, rows) => {
     if (err) {
@@ -4621,7 +4595,7 @@ app.post('/release-bill', (req, res) => {
     const remainingDays = totalDays % 30;
     
     // Round months based on remaining days
-    if (remainingDays > 5) {
+    if (remainingDays > 0) {
       months += 1;
     }
     

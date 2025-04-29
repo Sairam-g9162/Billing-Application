@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <title>Shanthi Pawn Brokers</title>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
   <style>
     /* Body styles */
     body {
@@ -30,7 +32,34 @@
       opacity: 0.7;
       z-index: 0;
     }
+    .bills-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
+.download-icon {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+  color:  #ac1053;
+    text-decoration: none;
+}
+
+.excel-download-icon {
+  width: 24px;
+  height: 24px;
+  transition: color 0.3s;
+}
+
+.download-icon:hover {
+  color: #ac1053;
+  background-color: white;
+}
+
+.download-icon:hover .excel-download-icon {
+  color: #ac1053;
+}
     /* Diagonal decorative line */
     .diagonal-line {
       position: fixed;
@@ -98,6 +127,16 @@
       bottom: -5px;
       left: 15%;
     }
+    .yesterday-bills-header::after {
+      content: '';
+      position: absolute;
+      width: 70%;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #626061, #171717, transparent);
+      bottom: -5px;
+      left: 15%;
+    }
+  
 
     .bills-list {
       display: flex;
@@ -361,6 +400,23 @@
       transition: opacity 0.3s;
       pointer-events: none;
     }
+    .yesterday-bills-container {
+  margin-top: 20px;
+  background-color: rgba(245, 245, 245, 0.9);
+  border-radius: 10px;
+  padding: 15px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.yesterday-bills-header {
+  color: #666;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  position: relative;
+  display: inline-block;
+}
   </style>
 </head>
 <body>
@@ -420,19 +476,54 @@
     </div>
   </div>
   
-  <!-- Today's Released Bills Container -->
-  <% if (typeof releasedBills !== 'undefined' && releasedBills.length > 0) { %>
-    <div class="today-bills-container">
+
+<% if (typeof todayReleasedBills !== 'undefined' && todayReleasedBills.length > 0) { %>
+  <div class="today-bills-container">
+    <div class="bills-header-section">
       <h2 class="today-bills-header">Today's Released Bills</h2>
-      <div class="bills-list">
-        <% releasedBills.forEach(bill => { %>
-          <div class="bill-chip" onclick="window.location.href='/find-bill?billNo=<%= bill %>'">
-            <%= bill %>
-          </div>
-        <% }); %>
-      </div>
+      <a href="/download-bills?date=today" class="download-icon" title="Download Today's Bills">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="excel-download-icon">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <path d="M12 18v-6"></path>
+          <path d="M8 15l4 4 4-4"></path>
+        </svg>
+      </a>
     </div>
-  <% } %>
+    <div class="bills-list">
+      <% todayReleasedBills.forEach(bill => { %>
+        <div class="bill-chip" onclick="window.location.href='/find-bill?billNo=<%= bill %>'">
+          <%= bill %>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+<% } %>
+
+<!-- Yesterday's Released Bills Container -->
+<% if (typeof yesterdayReleasedBills !== 'undefined' && yesterdayReleasedBills.length > 0) { %>
+  <div style="border-left: 4px solid #646969;" class="today-bills-container">
+    <div class="bills-header-section">
+      <h2 class="yesterday-bills-header">Yesterday's Released Bills</h2>
+      <a href="/download-bills?date=yesterday" class="download-icon" title="Download Yesterday's Bills">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="excel-download-icon">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <path d="M12 18v-6"></path>
+          <path d="M8 15l4 4 4-4"></path>
+        </svg>
+      </a>
+    </div>
+    <div class="bills-list">
+      <% yesterdayReleasedBills.forEach(bill => { %>
+        <div class="bill-chip" onclick="window.location.href='/find-bill?billNo=<%= bill %>'">
+          <%= bill %>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+<% } %>
+
   
   <!-- Help toggle button -->
   <div class="help-toggle" id="helpToggle">?</div>
